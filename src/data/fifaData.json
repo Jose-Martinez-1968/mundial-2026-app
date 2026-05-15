@@ -1,0 +1,339 @@
+{
+  "tournament": {
+    "name": "FIFA World Cup 2026™",
+    "startDate": "2026-06-11",
+    "endDate": "2026-07-19",
+    "hosts": ["Canada", "Mexico", "United States"],
+    "totalTeams": 48,
+    "totalMatches": 104,
+    "drawDate": "2025-12-05",
+    "drawVenue": "John F. Kennedy Center for the Performing Arts, Washington D.C."
+  },
+  "venues": [
+    {
+      "id": "azteca",
+      "name": "Mexico City Stadium",
+      "commonName": "Estadio Azteca",
+      "city": "Ciudad de México",
+      "country": "Mexico",
+      "capacity": 87523,
+      "timezone": "America/Mexico_City",
+      "lat": 19.3029,
+      "lon": -99.1505,
+      "matches": "5 partidos: 3 de fase de grupos (incluyendo el partido inaugural), Dieciseisavos y Octavos.",
+      "photo": "/venues/azteca.jpg"
+    },
+    {
+      "id": "monterrey",
+      "name": "Estadio Monterrey",
+      "commonName": "Estadio BBVA",
+      "city": "Monterrey (Guadalupe), NL",
+      "country": "Mexico",
+      "capacity": 53500,
+      "timezone": "America/Monterrey",
+      "lat": 25.6710,
+      "lon": -100.2447,
+      "matches": "4 partidos: 3 de fase de grupos y Dieciseisavos de final.",
+      "photo": "/venues/monterrey.jpg"
+    },
+    {
+      "id": "guadalajara",
+      "name": "Estadio Guadalajara",
+      "commonName": "Estadio Akron",
+      "city": "Guadalajara (Zapopan), Jal",
+      "country": "Mexico",
+      "capacity": 48071,
+      "timezone": "America/Mexico_City",
+      "lat": 20.6811,
+      "lon": -103.4627,
+      "matches": "4 partidos de fase de grupos.",
+      "photo": "/venues/guadalajara.jpg"
+    },
+    {
+      "id": "toronto",
+      "name": "Toronto Stadium",
+      "commonName": "BMO Field",
+      "city": "Toronto, ON",
+      "country": "Canada",
+      "capacity": 45000,
+      "timezone": "America/Toronto",
+      "lat": 43.6332,
+      "lon": -79.4186,
+      "matches": "6 partidos: 5 de fase de grupos (incluyendo el debut de Canadá) y Dieciseisavos.",
+      "photo": "/venues/toronto.jpg"
+    },
+    {
+      "id": "vancouver",
+      "name": "BC Place Vancouver",
+      "commonName": "BC Place",
+      "city": "Vancouver, BC",
+      "country": "Canada",
+      "capacity": 54500,
+      "timezone": "America/Vancouver",
+      "lat": 49.2767,
+      "lon": -123.1084,
+      "matches": "7 partidos: 5 de fase de grupos, Dieciseisavos y Octavos de final.",
+      "photo": "/venues/vancouver.jpg"
+    },
+    {
+      "id": "metlife",
+      "name": "New York New Jersey Stadium",
+      "commonName": "MetLife Stadium",
+      "city": "East Rutherford, NJ",
+      "country": "USA",
+      "capacity": 82500,
+      "timezone": "America/New_York",
+      "lat": 40.8128,
+      "lon": -74.0742,
+      "matches": "8 partidos: 5 de fase de grupos, Dieciseisavos, Octavos y la Final del Mundial.",
+      "photo": "/venues/metlife.jpg"
+    },
+    {
+      "id": "sofi",
+      "name": "Los Angeles Stadium",
+      "commonName": "SoFi Stadium",
+      "city": "Los Angeles (Inglewood), CA",
+      "country": "USA",
+      "capacity": 70240,
+      "timezone": "America/Los_Angeles",
+      "lat": 33.9535,
+      "lon": -118.3392,
+      "matches": "8 partidos: 5 de fase de grupos (incluyendo el debut de USA), Dieciseisavos y Cuartos de final.",
+      "photo": "/venues/sofi.jpg"
+    },
+    {
+      "id": "dallas",
+      "name": "Dallas Stadium",
+      "commonName": "AT&T Stadium",
+      "city": "Dallas (Arlington), TX",
+      "country": "USA",
+      "capacity": 94000,
+      "timezone": "America/Chicago",
+      "lat": 32.7473,
+      "lon": -97.0945,
+      "matches": "9 partidos (la mayor cantidad): 5 de fase de grupos, Dieciseisavos, Octavos y una Semifinal.",
+      "photo": "/venues/dallas.jpg"
+    },
+    {
+      "id": "miami",
+      "name": "Miami Stadium",
+      "commonName": "Hard Rock Stadium",
+      "city": "Miami (Miami Gardens), FL",
+      "country": "USA",
+      "capacity": 64767,
+      "timezone": "America/New_York",
+      "lat": 25.9580,
+      "lon": -80.2389,
+      "matches": "7 partidos: 4 de fase de grupos, Dieciseisavos, Cuartos de final y el partido por el Tercer Puesto.",
+      "photo": "/venues/miami.jpg"
+    },
+    {
+      "id": "atlanta",
+      "name": "Atlanta Stadium",
+      "commonName": "Mercedes-Benz Stadium",
+      "city": "Atlanta, GA",
+      "country": "USA",
+      "capacity": 71000,
+      "timezone": "America/New_York",
+      "lat": 33.7554,
+      "lon": -84.4010,
+      "matches": "8 partidos: 5 de fase de grupos, Dieciseisavos, Octavos y una Semifinal.",
+      "photo": "/venues/atlanta.jpg"
+    },
+    {
+      "id": "houston",
+      "name": "Houston Stadium",
+      "commonName": "NRG Stadium",
+      "city": "Houston, TX",
+      "country": "USA",
+      "capacity": 72220,
+      "timezone": "America/Chicago",
+      "lat": 29.6847,
+      "lon": -95.4077,
+      "matches": "7 partidos: 5 de fase de grupos, Dieciseisavos y Octavos de final.",
+      "photo": "/venues/houston.jpg"
+    },
+    {
+      "id": "boston",
+      "name": "Boston Stadium",
+      "commonName": "Gillette Stadium",
+      "city": "Boston (Foxborough), MA",
+      "country": "USA",
+      "capacity": 65878,
+      "timezone": "America/New_York",
+      "lat": 42.0909,
+      "lon": -71.2643,
+      "matches": "7 partidos: 5 de fase de grupos, Dieciseisavos y Cuartos de final.",
+      "photo": "/venues/boston.jpg"
+    },
+    {
+      "id": "philadelphia",
+      "name": "Philadelphia Stadium",
+      "commonName": "Lincoln Financial Field",
+      "city": "Philadelphia, PA",
+      "country": "USA",
+      "capacity": 69796,
+      "timezone": "America/New_York",
+      "lat": 39.9012,
+      "lon": -75.1675,
+      "matches": "6 partidos: 5 de fase de grupos y un partido de Octavos el 4 de julio.",
+      "photo": "/venues/philadelphia.jpg"
+    },
+    {
+      "id": "kansas",
+      "name": "Kansas City Stadium",
+      "commonName": "Arrowhead Stadium",
+      "city": "Kansas City, MO",
+      "country": "USA",
+      "capacity": 76416,
+      "timezone": "America/Chicago",
+      "lat": 39.0489,
+      "lon": -94.4839,
+      "matches": "6 partidos: 4 de fase de grupos, Dieciseisavos y Cuartos de final.",
+      "photo": "/venues/kansas.jpg"
+    },
+    {
+      "id": "sanfrancisco",
+      "name": "San Francisco Bay Area Stadium",
+      "commonName": "Levi's Stadium",
+      "city": "Santa Clara, CA",
+      "country": "USA",
+      "capacity": 68500,
+      "timezone": "America/Los_Angeles",
+      "lat": 37.4033,
+      "lon": -121.9702,
+      "matches": "6 partidos: 5 de fase de grupos and Dieciseisavos de final.",
+      "photo": "/venues/sanfrancisco.jpg"
+    },
+    {
+      "id": "seattle",
+      "name": "Seattle Stadium",
+      "commonName": "Lumen Field",
+      "city": "Seattle, WA",
+      "country": "USA",
+      "capacity": 69000,
+      "timezone": "America/Los_Angeles",
+      "lat": 47.5952,
+      "lon": -122.3316,
+      "matches": "6 partidos: 4 de fase de grupos, Dieciseisavos y Octavos de final.",
+      "photo": "/venues/seattle.jpg"
+    }
+  ],
+  "groups": [
+    {
+      "id": "A",
+      "teams": [
+        { "name": "Mexico", "code": "MEX", "flag": "mx", "continent": "CONCACAF", "seed": true, "ranking": 15 },
+        { "name": "South Africa", "code": "RSA", "flag": "za", "continent": "CAF", "seed": false, "ranking": 59 },
+        { "name": "South Korea", "code": "KOR", "flag": "kr", "continent": "AFC", "seed": false, "ranking": 22 },
+        { "name": "Czechia", "code": "CZE", "flag": "cz", "continent": "UEFA", "seed": false, "ranking": 36 }
+      ]
+    },
+    {
+      "id": "B",
+      "teams": [
+        { "name": "Canada", "code": "CAN", "flag": "ca", "continent": "CONCACAF", "seed": true, "ranking": 40 },
+        { "name": "Bosnia and Herzegovina", "code": "BIH", "flag": "ba", "continent": "UEFA", "seed": false, "ranking": 55 },
+        { "name": "Qatar", "code": "QAT", "flag": "qa", "continent": "AFC", "seed": false, "ranking": 45 },
+        { "name": "Switzerland", "code": "SUI", "flag": "ch", "continent": "UEFA", "seed": false, "ranking": 19 }
+      ]
+    },
+    {
+      "id": "C",
+      "teams": [
+        { "name": "Brazil", "code": "BRA", "flag": "br", "continent": "CONMEBOL", "seed": true, "ranking": 5 },
+        { "name": "Morocco", "code": "MAR", "flag": "ma", "continent": "CAF", "seed": false, "ranking": 14 },
+        { "name": "Haiti", "code": "HAI", "flag": "ht", "continent": "CONCACAF", "seed": false, "ranking": 90 },
+        { "name": "Scotland", "code": "SCO", "flag": "gb-sct", "continent": "UEFA", "seed": false, "ranking": 52 }
+      ]
+    },
+    {
+      "id": "D",
+      "teams": [
+        { "name": "USA", "code": "USA", "flag": "us", "continent": "CONCACAF", "seed": true, "ranking": 11 },
+        { "name": "Paraguay", "code": "PAR", "flag": "py", "continent": "CONMEBOL", "seed": false, "ranking": 48 },
+        { "name": "Australia", "code": "AUS", "flag": "au", "continent": "AFC", "seed": false, "ranking": 24 },
+        { "name": "Türkiye", "code": "TUR", "flag": "tr", "continent": "UEFA", "seed": false, "ranking": 42 }
+      ]
+    },
+    {
+      "id": "E",
+      "teams": [
+        { "name": "Germany", "code": "GER", "flag": "de", "continent": "UEFA", "seed": true, "ranking": 3 },
+        { "name": "Curaçao", "code": "CUW", "flag": "cw", "continent": "CONCACAF", "seed": false, "ranking": 85 },
+        { "name": "Ivory Coast", "code": "CIV", "flag": "ci", "continent": "CAF", "seed": false, "ranking": 38 },
+        { "name": "Ecuador", "code": "ECU", "flag": "ec", "continent": "CONMEBOL", "seed": false, "ranking": 30 }
+      ]
+    },
+    {
+      "id": "F",
+      "teams": [
+        { "name": "Netherlands", "code": "NED", "flag": "nl", "continent": "UEFA", "seed": true, "ranking": 7 },
+        { "name": "Japan", "code": "JPN", "flag": "jp", "continent": "AFC", "seed": false, "ranking": 16 },
+        { "name": "Sweden", "code": "SWE", "flag": "se", "continent": "UEFA", "seed": false, "ranking": 33 },
+        { "name": "Tunisia", "code": "TUN", "flag": "tn", "continent": "CAF", "seed": false, "ranking": 41 }
+      ]
+    },
+    {
+      "id": "G",
+      "teams": [
+        { "name": "Belgium", "code": "BEL", "flag": "be", "continent": "UEFA", "seed": true, "ranking": 6 },
+        { "name": "Egypt", "code": "EGY", "flag": "eg", "continent": "CAF", "seed": false, "ranking": 35 },
+        { "name": "Iran", "code": "IRN", "flag": "ir", "continent": "AFC", "seed": false, "ranking": 20 },
+        { "name": "New Zealand", "code": "NZL", "flag": "nz", "continent": "OFC", "seed": false, "ranking": 93 }
+      ]
+    },
+    {
+      "id": "H",
+      "teams": [
+        { "name": "Spain", "code": "ESP", "flag": "es", "continent": "UEFA", "seed": true, "ranking": 1 },
+        { "name": "Uruguay", "code": "URU", "flag": "uy", "continent": "CONMEBOL", "seed": false, "ranking": 10 },
+        { "name": "Saudi Arabia", "code": "KSA", "flag": "sa", "continent": "AFC", "seed": false, "ranking": 56 },
+        { "name": "Cabo Verde", "code": "CPV", "flag": "cv", "continent": "CAF", "seed": false, "ranking": 72 }
+      ]
+    },
+    {
+      "id": "I",
+      "teams": [
+        { "name": "France", "code": "FRA", "flag": "fr", "continent": "UEFA", "seed": true, "ranking": 2 },
+        { "name": "Senegal", "code": "SEN", "flag": "sn", "continent": "CAF", "seed": false, "ranking": 18 },
+        { "name": "Norway", "code": "NOR", "flag": "no", "continent": "UEFA", "seed": false, "ranking": 29 },
+        { "name": "Iraq", "code": "IRQ", "flag": "iq", "continent": "AFC", "seed": false, "ranking": 63 }
+      ]
+    },
+    {
+      "id": "J",
+      "teams": [
+        { "name": "Argentina", "code": "ARG", "flag": "ar", "continent": "CONMEBOL", "seed": true, "ranking": 4 },
+        { "name": "Algeria", "code": "ALG", "flag": "dz", "continent": "CAF", "seed": false, "ranking": 31 },
+        { "name": "Austria", "code": "AUT", "flag": "at", "continent": "UEFA", "seed": false, "ranking": 25 },
+        { "name": "Jordan", "code": "JOR", "flag": "jo", "continent": "AFC", "seed": false, "ranking": 70 }
+      ]
+    },
+    {
+      "id": "K",
+      "teams": [
+        { "name": "Portugal", "code": "POR", "flag": "pt", "continent": "UEFA", "seed": true, "ranking": 8 },
+        { "name": "Colombia", "code": "COL", "flag": "co", "continent": "CONMEBOL", "seed": false, "ranking": 12 },
+        { "name": "Uzbekistan", "code": "UZB", "flag": "uz", "continent": "AFC", "seed": false, "ranking": 62 },
+        { "name": "DR Congo", "code": "COD", "flag": "cd", "continent": "CAF", "seed": false, "ranking": 49 }
+      ]
+    },
+    {
+      "id": "L",
+      "teams": [
+        { "name": "England", "code": "ENG", "flag": "gb-eng", "continent": "UEFA", "seed": true, "ranking": 9 },
+        { "name": "Croatia", "code": "CRO", "flag": "hr", "continent": "UEFA", "seed": false, "ranking": 13 },
+        { "name": "Panama", "code": "PAN", "flag": "pa", "continent": "CONCACAF", "seed": false, "ranking": 44 },
+        { "name": "Ghana", "code": "GHA", "flag": "gh", "continent": "CAF", "seed": false, "ranking": 67 }
+      ]
+    }
+  ],
+  "openingMatch": {
+    "date": "2026-06-11T19:00:00-06:00",
+    "team1": "Mexico",
+    "team2": "South Africa",
+    "venue": "Estadio Azteca",
+    "city": "Mexico City"
+  }
+}

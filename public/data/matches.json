@@ -1,0 +1,279 @@
+[
+  {
+    "matchId": "M001",
+    "stage": "Fase de Grupos (Grupo A)",
+    "groupId": "A",
+    "team1": {
+      "name": "Mexico",
+      "code": "MEX",
+      "score": null
+    },
+    "team2": {
+      "name": "South Africa",
+      "code": "RSA",
+      "score": null
+    },
+    "status": "SCHEDULED",
+    "officialDate": "2026-06-11",
+    "utcDateString": "2026-06-11T19:00:00.000Z",
+    "venue": "Mexico City Stadium",
+    "stadium": "Mexico City Stadium",
+    "venueTimeZone": "America/Mexico_City",
+    "isOpening": true,
+    "kickoffStatus": "confirmed",
+    "source": "official-schedule"
+  },
+  {
+    "matchId": "M002",
+    "stage": "Fase de Grupos (Grupo A)",
+    "groupId": "A",
+    "team1": {
+      "name": "South Korea",
+      "code": "KOR",
+      "score": null
+    },
+    "team2": {
+      "name": "Czechia",
+      "code": "CZE",
+      "score": null
+    },
+    "status": "SCHEDULED",
+    "officialDate": "2026-06-11",
+    "venue": "Estadio Guadalajara",
+    "stadium": "Estadio Guadalajara",
+    "venueTimeZone": "America/Mexico_City",
+    "isOpening": false,
+    "kickoffStatus": "date-only",
+    "source": "official-schedule"
+  },
+  {
+    "matchId": "M003",
+    "stage": "Fase de Grupos (Grupo B)",
+    "groupId": "B",
+    "team1": {
+      "name": "Canada",
+      "code": "CAN",
+      "score": null
+    },
+    "team2": {
+      "name": "Bosnia and Herzegovina",
+      "code": "BIH",
+      "score": null
+    },
+    "status": "SCHEDULED",
+    "officialDate": "2026-06-12",
+    "venue": "Toronto Stadium",
+    "stadium": "Toronto Stadium",
+    "venueTimeZone": "America/Toronto",
+    "isOpening": false,
+    "kickoffStatus": "date-only",
+    "source": "official-schedule"
+  },
+  {
+    "matchId": "M004",
+    "stage": "Fase de Grupos (Grupo D)",
+    "groupId": "D",
+    "team1": {
+      "name": "USA",
+      "code": "USA",
+      "score": null
+    },
+    "team2": {
+      "name": "Paraguay",
+      "code": "PAR",
+      "score": null
+    },
+    "status": "SCHEDULED",
+    "officialDate": "2026-06-12",
+    "venue": "Los Angeles Stadium",
+    "stadium": "Los Angeles Stadium",
+    "venueTimeZone": "America/Los_Angeles",
+    "isOpening": false,
+    "kickoffStatus": "date-only",
+    "source": "official-schedule"
+  },
+  {
+    "matchId": "M005",
+    "stage": "Fase de Grupos (Grupo C)",
+    "groupId": "C",
+    "team1": {
+      "name": "Haiti",
+      "code": "HAI",
+      "score": null
+    },
+    "team2": {
+      "name": "Scotland",
+      "code": "SCO",
+      "score": null
+    },
+    "status": "SCHEDULED",
+    "officialDate": "2026-06-13",
+    "venue": "Boston Stadium",
+    "stadium": "Boston Stadium",
+    "venueTimeZone": "America/New_York",
+    "isOpening": false,
+    "kickoffStatus": "date-only",
+    "source": "official-schedule"
+  },
+  {
+    "matchId": "M006",
+    "stage": "Fase de Grupos (Grupo D)",
+    "groupId": "D",
+    "team1": {
+      "name": "Australia",
+      "code": "AUS",
+      "score": null
+    },
+    "team2": {
+      "name": "Türkiye",
+      "code": "TUR",
+      "score": null
+    },
+    "status": "SCHEDULED",
+    "officialDate": "2026-06-13",
+    "venue": "BC Place Vancouver",
+    "stadium": "BC Place Vancouver",
+    "venueTimeZone": "America/Vancouver",
+    "isOpening": false,
+    "kickoffStatus": "date-only",
+    "source": "official-schedule"
+  },
+  {
+    "matchId": "M007",
+    "stage": "Fase de Grupos (Grupo C)",
+    "groupId": "C",
+    "team1": {
+      "name": "Brazil",
+      "code": "BRA",
+      "score": null
+    },
+    "team2": {
+      "name": "Morocco",
+      "code": "MAR",
+      "score": null
+    },
+    "status": "SCHEDULED",
+    "officialDate": "2026-06-13",
+    "venue": "New York New Jersey Stadium",
+    "stadium": "New York New Jersey Stadium",
+    "venueTimeZone": "America/New_York",
+    "isOpening": false,
+    "kickoffStatus": "date-only",
+    "source": "official-schedule"
+  },
+  {
+    "matchId": "M008",
+    "stage": "Fase de Grupos (Grupo B)",
+    "groupId": "B",
+    "team1": {
+      "name": "Qatar",
+      "code": "QAT",
+      "score": null
+    },
+    "team2": {
+      "name": "Switzerland",
+      "code": "SUI",
+      "score": null
+    },
+    "status": "SCHEDULED",
+    "officialDate": "2026-06-13",
+    "venue": "San Francisco Bay Area Stadium",
+    "stadium": "San Francisco Bay Area Stadium",
+    "venueTimeZone": "America/Los_Angeles",
+    "isOpening": false,
+    "kickoffStatus": "date-only",
+    "source": "official-schedule"
+  },
+  {
+    "matchId": "M009",
+    "stage": "Fase de Grupos (Grupo E)",
+    "groupId": "E",
+    "team1": {
+      "name": "Ivory Coast",
+      "code": "CIV",
+      "score": null
+    },
+    "team2": {
+      "name": "Ecuador",
+      "code": "ECU",
+      "score": null
+    },
+    "status": "SCHEDULED",
+    "officialDate": "2026-06-14",
+    "venue": "Philadelphia Stadium",
+    "stadium": "Philadelphia Stadium",
+    "venueTimeZone": "America/New_York",
+    "isOpening": false,
+    "kickoffStatus": "date-only",
+    "source": "official-schedule"
+  },
+  {
+    "matchId": "M010",
+    "stage": "Fase de Grupos (Grupo E)",
+    "groupId": "E",
+    "team1": {
+      "name": "Germany",
+      "code": "GER",
+      "score": null
+    },
+    "team2": {
+      "name": "Curaçao",
+      "code": "CUW",
+      "score": null
+    },
+    "status": "SCHEDULED",
+    "officialDate": "2026-06-14",
+    "venue": "Houston Stadium",
+    "stadium": "Houston Stadium",
+    "venueTimeZone": "America/Chicago",
+    "isOpening": false,
+    "kickoffStatus": "date-only",
+    "source": "official-schedule"
+  },
+  {
+    "matchId": "M011",
+    "stage": "Fase de Grupos (Grupo F)",
+    "groupId": "F",
+    "team1": {
+      "name": "Netherlands",
+      "code": "NED",
+      "score": null
+    },
+    "team2": {
+      "name": "Japan",
+      "code": "JPN",
+      "score": null
+    },
+    "status": "SCHEDULED",
+    "officialDate": "2026-06-14",
+    "venue": "Dallas Stadium",
+    "stadium": "Dallas Stadium",
+    "venueTimeZone": "America/Chicago",
+    "isOpening": false,
+    "kickoffStatus": "date-only",
+    "source": "official-schedule"
+  },
+  {
+    "matchId": "M012",
+    "stage": "Fase de Grupos (Grupo F)",
+    "groupId": "F",
+    "team1": {
+      "name": "Sweden",
+      "code": "SWE",
+      "score": null
+    },
+    "team2": {
+      "name": "Tunisia",
+      "code": "TUN",
+      "score": null
+    },
+    "status": "SCHEDULED",
+    "officialDate": "2026-06-14",
+    "venue": "Estadio Monterrey",
+    "stadium": "Estadio Monterrey",
+    "venueTimeZone": "America/Monterrey",
+    "isOpening": false,
+    "kickoffStatus": "date-only",
+    "source": "official-schedule"
+  }
+]

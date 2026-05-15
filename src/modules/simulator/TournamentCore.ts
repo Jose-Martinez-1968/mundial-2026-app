@@ -1,0 +1,309 @@
+import type { Group, GroupMatch, KnockoutMatch, Standing, Team } from '../../types';
+
+export const GROUPS_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+
+const THIRD_PLACE_ROUND_OF_32_SLOTS = [
+  { matchId: 'R32-2', allowedGroups: ['A', 'B', 'C', 'D', 'F'] },
+  { matchId: 'R32-5', allowedGroups: ['C', 'D', 'F', 'G', 'H'] },
+  { matchId: 'R32-7', allowedGroups: ['C', 'E', 'F', 'H', 'I'] },
+  { matchId: 'R32-8', allowedGroups: ['E', 'H', 'I', 'J', 'K'] },
+  { matchId: 'R32-9', allowedGroups: ['B', 'E', 'F', 'I', 'J'] },
+  { matchId: 'R32-10', allowedGroups: ['A', 'E', 'H', 'I', 'J'] },
+  { matchId: 'R32-13', allowedGroups: ['E', 'F', 'G', 'I', 'J'] },
+  { matchId: 'R32-15', allowedGroups: ['D', 'E', 'I', 'J', 'L'] },
+] as const;
+
+const getFairPlayScore = (team: Team): number => {
+  return (team.players || []).reduce((score, player) => {
+    return score - player.yellowCards - player.redCards * 4;
+  }, 0);
+};
+
+export const compareStandings = (a: Standing, b: Standing): number => {
+  if (b.points !== a.points) return b.points - a.points;
+  if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+  if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+  if (b.fairPlay !== a.fairPlay) return b.fairPlay - a.fairPlay;
+  return (a.ranking || 999) - (b.ranking || 999);
+};
+
+const createMiniStanding = (team: Standing): Standing => ({
+  ...team,
+  points: 0,
+  played: 0,
+  wins: 0,
+  draws: 0,
+  losses: 0,
+  won: 0,
+  drawn: 0,
+  lost: 0,
+  goalsFor: 0,
+  goalsAgainst: 0,
+  goalDifference: 0,
+});
+
+const applyMatchToStandings = (home: Standing, away: Standing, homeScore: number, awayScore: number) => {
+  home.played += 1;
+  away.played += 1;
+  home.goalsFor += homeScore;
+  away.goalsFor += awayScore;
+  home.goalsAgainst += awayScore;
+  away.goalsAgainst += homeScore;
+  home.goalDifference = home.goalsFor - home.goalsAgainst;
+  away.goalDifference = away.goalsFor - away.goalsAgainst;
+
+  if (homeScore > awayScore) {
+    home.wins += 1;
+    home.won += 1;
+    home.points += 3;
+    away.losses += 1;
+    away.lost += 1;
+  } else if (homeScore < awayScore) {
+    away.wins += 1;
+    away.won += 1;
+    away.points += 3;
+    home.losses += 1;
+    home.lost += 1;
+  } else {
+    home.draws += 1;
+    away.draws += 1;
+    home.drawn += 1;
+    away.drawn += 1;
+    home.points += 1;
+    away.points += 1;
+  }
+};
+
+const compareOverallFallback = (a: Standing, b: Standing): number => {
+  if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+  if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+  if (b.fairPlay !== a.fairPlay) return b.fairPlay - a.fairPlay;
+  return (a.ranking || 999) - (b.ranking || 999);
+};
+
+const resolvePointTie = (teams: Standing[], groupMatches: GroupMatch[]): Standing[] => {
+  if (teams.length <= 1) return teams;
+
+  const teamCodes = new Set(teams.map(team => team.code));
+  const miniTable = new Map(teams.map(team => [team.code, createMiniStanding(team)]));
+
+  groupMatches.forEach(match => {
+    if (match.homeScore === null || match.awayScore === null) return;
+    if (!teamCodes.has(match.homeTeam.code) || !teamCodes.has(match.awayTeam.code)) return;
+
+    const home = miniTable.get(match.homeTeam.code);
+    const away = miniTable.get(match.awayTeam.code);
+    if (!home || !away) return;
+    applyMatchToStandings(home, away, match.homeScore, match.awayScore);
+  });
+
+  const groupedByMini = new Map<string, Standing[]>();
+  teams.forEach(team => {
+    const mini = miniTable.get(team.code);
+    const key = `${mini?.points ?? 0}|${mini?.goalDifference ?? 0}|${mini?.goalsFor ?? 0}`;
+    const bucket = groupedByMini.get(key) || [];
+    bucket.push(team);
+    groupedByMini.set(key, bucket);
+  });
+
+  return [...teams]
+    .sort((a, b) => {
+      const miniA = miniTable.get(a.code);
+      const miniB = miniTable.get(b.code);
+      if (!miniA || !miniB) return compareOverallFallback(a, b);
+      if (miniB.points !== miniA.points) return miniB.points - miniA.points;
+      if (miniB.goalDifference !== miniA.goalDifference) return miniB.goalDifference - miniA.goalDifference;
+      if (miniB.goalsFor !== miniA.goalsFor) return miniB.goalsFor - miniA.goalsFor;
+      return compareOverallFallback(a, b);
+    })
+    .sort((a, b) => {
+      const miniA = miniTable.get(a.code);
+      const miniB = miniTable.get(b.code);
+      const keyA = `${miniA?.points ?? 0}|${miniA?.goalDifference ?? 0}|${miniA?.goalsFor ?? 0}`;
+      const keyB = `${miniB?.points ?? 0}|${miniB?.goalDifference ?? 0}|${miniB?.goalsFor ?? 0}`;
+      if (keyA !== keyB) {
+        if ((miniB?.points ?? 0) !== (miniA?.points ?? 0)) return (miniB?.points ?? 0) - (miniA?.points ?? 0);
+        if ((miniB?.goalDifference ?? 0) !== (miniA?.goalDifference ?? 0)) return (miniB?.goalDifference ?? 0) - (miniA?.goalDifference ?? 0);
+        return (miniB?.goalsFor ?? 0) - (miniA?.goalsFor ?? 0);
+      }
+      return compareOverallFallback(a, b);
+    });
+};
+
+const rankGroupStandings = (groupStandings: Standing[], groupMatches: GroupMatch[]): Standing[] => {
+  const buckets = new Map<number, Standing[]>();
+  groupStandings.forEach(team => {
+    const bucket = buckets.get(team.points) || [];
+    bucket.push(team);
+    buckets.set(team.points, bucket);
+  });
+
+  return [...buckets.keys()]
+    .sort((a, b) => b - a)
+    .flatMap(points => resolvePointTie(buckets.get(points) || [], groupMatches));
+};
+
+const assignThirdPlaceTeams = (thirdPlaceTeams: Standing[]): Map<string, Standing> => {
+  const orderedTeams = [...thirdPlaceTeams].sort((a, b) => a.groupId.localeCompare(b.groupId));
+
+  const backtrack = (
+    slotIndex: number,
+    remainingTeams: Standing[],
+    assignments: Map<string, Standing>,
+  ): Map<string, Standing> | null => {
+    if (slotIndex === THIRD_PLACE_ROUND_OF_32_SLOTS.length) {
+      return assignments;
+    }
+
+    const slot = THIRD_PLACE_ROUND_OF_32_SLOTS[slotIndex];
+    const candidates = remainingTeams.filter(team => (slot.allowedGroups as readonly string[]).includes(team.groupId));
+
+    for (const candidate of candidates) {
+      const nextAssignments = new Map(assignments);
+      nextAssignments.set(slot.matchId, candidate);
+      const nextRemaining = remainingTeams.filter(team => team.code !== candidate.code);
+      const resolved = backtrack(slotIndex + 1, nextRemaining, nextAssignments);
+      if (resolved) return resolved;
+    }
+
+    return null;
+  };
+
+  return backtrack(0, orderedTeams, new Map<string, Standing>()) || new Map<string, Standing>();
+};
+
+export const createInitialGroupMatches = (groups: Group[]): GroupMatch[] => {
+  const matches: GroupMatch[] = [];
+
+  groups.forEach(group => {
+    const pairs = [
+      [0, 1], [2, 3],
+      [0, 2], [1, 3],
+      [0, 3], [1, 2],
+    ];
+
+    pairs.forEach(([i, j], idx) => {
+      matches.push({
+        id: `G-${group.id}-${idx + 1}`,
+        groupId: group.id,
+        homeTeam: group.teams[i],
+        awayTeam: group.teams[j],
+        homeScore: null,
+        awayScore: null,
+      });
+    });
+  });
+
+  return matches;
+};
+
+export const calculateStandingsForGroups = (
+  groups: Group[],
+  matches: GroupMatch[],
+  teamsData: Team[] = [],
+): Record<string, Standing[]> => {
+  const teamInfo = new Map(teamsData.map(team => [team.code, team]));
+  const standings: Record<string, Standing[]> = {};
+
+  groups.forEach(group => {
+    const groupStandings: Record<string, Standing> = {};
+
+    group.teams.forEach(team => {
+      const enrichedTeam = teamInfo.get(team.code) || team;
+      groupStandings[team.code] = {
+        ...enrichedTeam,
+        teamId: team.code,
+        teamName: team.name,
+        groupId: group.id,
+        points: 0,
+        played: 0,
+        wins: 0,
+        draws: 0,
+        losses: 0,
+        won: 0,
+        drawn: 0,
+        lost: 0,
+        goalsFor: 0,
+        goalsAgainst: 0,
+        goalDifference: 0,
+        fairPlay: getFairPlayScore(enrichedTeam),
+      };
+    });
+
+    matches
+      .filter(match => match.groupId === group.id)
+      .forEach(match => {
+        if (match.homeScore === null || match.awayScore === null) return;
+
+        const home = groupStandings[match.homeTeam.code];
+        const away = groupStandings[match.awayTeam.code];
+        if (!home || !away) return;
+
+        applyMatchToStandings(home, away, match.homeScore, match.awayScore);
+      });
+
+    standings[group.id] = rankGroupStandings(
+      Object.values(groupStandings),
+      matches.filter(match => match.groupId === group.id),
+    );
+  });
+
+  return standings;
+};
+
+export const getBestThirdPlacedTeams = (standings: Record<string, Standing[]>): Standing[] => {
+  return GROUPS_ORDER
+    .map(groupId => standings[groupId]?.[2])
+    .filter((team): team is Standing => Boolean(team))
+    .sort(compareStandings)
+    .slice(0, 8);
+};
+
+export const calculateRoundOf32FromStandings = (standings: Record<string, Standing[]>): KnockoutMatch[] => {
+  const bestThirds = getBestThirdPlacedTeams(standings);
+  const thirdAssignments = assignThirdPlaceTeams(bestThirds);
+  const matches: KnockoutMatch[] = [];
+
+  matches.push({ id: 'R32-1', home: standings.A?.[1] || null, away: standings.B?.[1] || null });
+  matches.push({ id: 'R32-2', home: standings.E?.[0] || null, away: thirdAssignments.get('R32-2') || null });
+  matches.push({ id: 'R32-3', home: standings.F?.[0] || null, away: standings.C?.[1] || null });
+  matches.push({ id: 'R32-4', home: standings.C?.[0] || null, away: standings.F?.[1] || null });
+  matches.push({ id: 'R32-5', home: standings.I?.[0] || null, away: thirdAssignments.get('R32-5') || null });
+  matches.push({ id: 'R32-6', home: standings.E?.[1] || null, away: standings.I?.[1] || null });
+  matches.push({ id: 'R32-7', home: standings.A?.[0] || null, away: thirdAssignments.get('R32-7') || null });
+  matches.push({ id: 'R32-8', home: standings.L?.[0] || null, away: thirdAssignments.get('R32-8') || null });
+  matches.push({ id: 'R32-9', home: standings.D?.[0] || null, away: thirdAssignments.get('R32-9') || null });
+  matches.push({ id: 'R32-10', home: standings.G?.[0] || null, away: thirdAssignments.get('R32-10') || null });
+  matches.push({ id: 'R32-11', home: standings.K?.[1] || null, away: standings.L?.[1] || null });
+  matches.push({ id: 'R32-12', home: standings.H?.[0] || null, away: standings.J?.[1] || null });
+  matches.push({ id: 'R32-13', home: standings.B?.[0] || null, away: thirdAssignments.get('R32-13') || null });
+  matches.push({ id: 'R32-14', home: standings.J?.[0] || null, away: standings.H?.[1] || null });
+  matches.push({ id: 'R32-15', home: standings.K?.[0] || null, away: thirdAssignments.get('R32-15') || null });
+  matches.push({ id: 'R32-16', home: standings.D?.[1] || null, away: standings.G?.[1] || null });
+
+  return matches;
+};
+
+const getWinner = (match: KnockoutMatch | undefined): Standing | null => {
+  if (!match) return null;
+  if (match.winner) return match.winner;
+  if (match.homeScore === null || match.homeScore === undefined) return null;
+  if (match.awayScore === null || match.awayScore === undefined) return null;
+  if (match.homeScore > match.awayScore) return match.home;
+  if (match.awayScore > match.homeScore) return match.away;
+  return null;
+};
+
+export const calculateNextRoundFromMatches = (prevRound: KnockoutMatch[], roundPrefix: string): KnockoutMatch[] => {
+  const matches: KnockoutMatch[] = [];
+
+  for (let i = 0; i < prevRound.length; i += 2) {
+    matches.push({
+      id: `${roundPrefix}-${matches.length + 1}`,
+      home: getWinner(prevRound[i]),
+      away: getWinner(prevRound[i + 1]),
+    });
+  }
+
+  return matches;
+};
