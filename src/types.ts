@@ -61,6 +61,13 @@ export interface KnockoutMatch {
   winner?: Standing | null;
 }
 
+export interface BookingDTO {
+  playerName: string;
+  teamCode?: string;
+  teamName?: string;
+  card: 'yellow' | 'red';
+}
+
 export type MatchStatus = 'SCHEDULED' | 'LIVE' | 'FINISHED' | 'POSTPONED' | 'CANCELLED';
 
 export interface MatchTeamDTO {
@@ -84,7 +91,9 @@ export interface MatchDTO {
   isOpening?: boolean;
   isFinal?: boolean;
   kickoffStatus?: 'confirmed' | 'date-only';
-  source: 'official-schedule' | 'simulation';
+  source: 'official-schedule' | 'live-feed' | 'official-api';
+  winnerCode?: string;
+  bookings?: BookingDTO[];
 }
 
 export interface Venue {

@@ -6,22 +6,36 @@
     "team1": {
       "name": "Mexico",
       "code": "MEX",
-      "score": null
+      "score": 2
     },
     "team2": {
       "name": "South Africa",
       "code": "RSA",
-      "score": null
+      "score": 0
     },
-    "status": "SCHEDULED",
+    "status": "FINISHED",
     "officialDate": "2026-06-11",
     "utcDateString": "2026-06-11T19:00:00.000Z",
-    "venue": "Mexico City Stadium",
-    "stadium": "Mexico City Stadium",
+    "venue": "Estadio Azteca",
+    "stadium": "Estadio Azteca",
     "venueTimeZone": "America/Mexico_City",
     "isOpening": true,
     "kickoffStatus": "confirmed",
-    "source": "official-schedule"
+    "source": "official-schedule",
+    "bookings": [
+      {
+        "playerName": "Edson Álvarez",
+        "card": "yellow",
+        "teamCode": "MEX",
+        "teamName": "Mexico"
+      },
+      {
+        "playerName": "Thabo Cele",
+        "card": "yellow",
+        "teamCode": "RSA",
+        "teamName": "South Africa"
+      }
+    ]
   },
   {
     "matchId": "M002",
@@ -30,21 +44,36 @@
     "team1": {
       "name": "South Korea",
       "code": "KOR",
-      "score": null
+      "score": 2
     },
     "team2": {
       "name": "Czechia",
       "code": "CZE",
-      "score": null
+      "score": 1
     },
-    "status": "SCHEDULED",
+    "status": "FINISHED",
     "officialDate": "2026-06-11",
-    "venue": "Estadio Guadalajara",
-    "stadium": "Estadio Guadalajara",
+    "utcDateString": "2026-06-11T22:00:00.000Z",
+    "venue": "Estadio Akron, Guadalajara",
+    "stadium": "Estadio Akron, Guadalajara",
     "venueTimeZone": "America/Mexico_City",
     "isOpening": false,
-    "kickoffStatus": "date-only",
-    "source": "official-schedule"
+    "kickoffStatus": "confirmed",
+    "source": "official-schedule",
+    "bookings": [
+      {
+        "playerName": "Lee Jae-sung",
+        "card": "yellow",
+        "teamCode": "KOR",
+        "teamName": "South Korea"
+      },
+      {
+        "playerName": "Vladimír Coufal",
+        "card": "yellow",
+        "teamCode": "CZE",
+        "teamName": "Czechia"
+      }
+    ]
   },
   {
     "matchId": "M003",
@@ -53,21 +82,36 @@
     "team1": {
       "name": "Canada",
       "code": "CAN",
-      "score": null
+      "score": 1
     },
     "team2": {
       "name": "Bosnia and Herzegovina",
       "code": "BIH",
-      "score": null
+      "score": 1
     },
-    "status": "SCHEDULED",
+    "status": "FINISHED",
     "officialDate": "2026-06-12",
-    "venue": "Toronto Stadium",
-    "stadium": "Toronto Stadium",
+    "utcDateString": "2026-06-12T19:00:00.000Z",
+    "venue": "BMO Field, Toronto",
+    "stadium": "BMO Field, Toronto",
     "venueTimeZone": "America/Toronto",
     "isOpening": false,
-    "kickoffStatus": "date-only",
-    "source": "official-schedule"
+    "kickoffStatus": "confirmed",
+    "source": "official-schedule",
+    "bookings": [
+      {
+        "playerName": "Ismaël Koné",
+        "card": "yellow",
+        "teamCode": "CAN",
+        "teamName": "Canada"
+      },
+      {
+        "playerName": "Edin Džeko",
+        "card": "yellow",
+        "teamCode": "BIH",
+        "teamName": "Bosnia and Herzegovina"
+      }
+    ]
   },
   {
     "matchId": "M004",
@@ -76,21 +120,36 @@
     "team1": {
       "name": "USA",
       "code": "USA",
-      "score": null
+      "score": 4
     },
     "team2": {
       "name": "Paraguay",
       "code": "PAR",
-      "score": null
+      "score": 1
     },
-    "status": "SCHEDULED",
+    "status": "FINISHED",
     "officialDate": "2026-06-12",
-    "venue": "Los Angeles Stadium",
-    "stadium": "Los Angeles Stadium",
+    "utcDateString": "2026-06-12T22:00:00.000Z",
+    "venue": "SoFi Stadium, Los Ángeles",
+    "stadium": "SoFi Stadium, Los Ángeles",
     "venueTimeZone": "America/Los_Angeles",
     "isOpening": false,
-    "kickoffStatus": "date-only",
-    "source": "official-schedule"
+    "kickoffStatus": "confirmed",
+    "source": "official-schedule",
+    "bookings": [
+      {
+        "playerName": "Christian Pulisic",
+        "card": "yellow",
+        "teamCode": "USA",
+        "teamName": "USA"
+      },
+      {
+        "playerName": "Gustavo Gómez",
+        "card": "yellow",
+        "teamCode": "PAR",
+        "teamName": "Paraguay"
+      }
+    ]
   },
   {
     "matchId": "M005",
@@ -99,21 +158,36 @@
     "team1": {
       "name": "Haiti",
       "code": "HAI",
-      "score": null
+      "score": 0
     },
     "team2": {
       "name": "Scotland",
       "code": "SCO",
-      "score": null
+      "score": 1
     },
-    "status": "SCHEDULED",
+    "status": "FINISHED",
     "officialDate": "2026-06-13",
-    "venue": "Boston Stadium",
-    "stadium": "Boston Stadium",
+    "utcDateString": "2026-06-13T16:00:00.000Z",
+    "venue": "Gillette Stadium, Boston",
+    "stadium": "Gillette Stadium, Boston",
     "venueTimeZone": "America/New_York",
     "isOpening": false,
-    "kickoffStatus": "date-only",
-    "source": "official-schedule"
+    "kickoffStatus": "confirmed",
+    "source": "official-schedule",
+    "bookings": [
+      {
+        "playerName": "Orelien Dieu",
+        "card": "yellow",
+        "teamCode": "HAI",
+        "teamName": "Haiti"
+      },
+      {
+        "playerName": "John McGinn",
+        "card": "yellow",
+        "teamCode": "SCO",
+        "teamName": "Scotland"
+      }
+    ]
   },
   {
     "matchId": "M006",
@@ -122,21 +196,36 @@
     "team1": {
       "name": "Australia",
       "code": "AUS",
-      "score": null
+      "score": 2
     },
     "team2": {
       "name": "Türkiye",
       "code": "TUR",
-      "score": null
+      "score": 0
     },
-    "status": "SCHEDULED",
+    "status": "FINISHED",
     "officialDate": "2026-06-13",
-    "venue": "BC Place Vancouver",
-    "stadium": "BC Place Vancouver",
+    "utcDateString": "2026-06-13T19:00:00.000Z",
+    "venue": "BC Place, Vancouver",
+    "stadium": "BC Place, Vancouver",
     "venueTimeZone": "America/Vancouver",
     "isOpening": false,
-    "kickoffStatus": "date-only",
-    "source": "official-schedule"
+    "kickoffStatus": "confirmed",
+    "source": "official-schedule",
+    "bookings": [
+      {
+        "playerName": "Merih Demiral",
+        "card": "yellow",
+        "teamCode": "TUR",
+        "teamName": "Türkiye"
+      },
+      {
+        "playerName": "Çağlar Söyüncü",
+        "card": "yellow",
+        "teamCode": "TUR",
+        "teamName": "Türkiye"
+      }
+    ]
   },
   {
     "matchId": "M007",
@@ -145,21 +234,36 @@
     "team1": {
       "name": "Brazil",
       "code": "BRA",
-      "score": null
+      "score": 1
     },
     "team2": {
       "name": "Morocco",
       "code": "MAR",
-      "score": null
+      "score": 1
     },
-    "status": "SCHEDULED",
+    "status": "FINISHED",
     "officialDate": "2026-06-13",
-    "venue": "New York New Jersey Stadium",
-    "stadium": "New York New Jersey Stadium",
+    "utcDateString": "2026-06-13T22:00:00.000Z",
+    "venue": "MetLife Stadium, New York/New Jersey",
+    "stadium": "MetLife Stadium, New York/New Jersey",
     "venueTimeZone": "America/New_York",
     "isOpening": false,
-    "kickoffStatus": "date-only",
-    "source": "official-schedule"
+    "kickoffStatus": "confirmed",
+    "source": "official-schedule",
+    "bookings": [
+      {
+        "playerName": "Marquinhos",
+        "card": "yellow",
+        "teamCode": "BRA",
+        "teamName": "Brazil"
+      },
+      {
+        "playerName": "Sofyan Amrabat",
+        "card": "yellow",
+        "teamCode": "MAR",
+        "teamName": "Morocco"
+      }
+    ]
   },
   {
     "matchId": "M008",
@@ -168,21 +272,36 @@
     "team1": {
       "name": "Qatar",
       "code": "QAT",
-      "score": null
+      "score": 1
     },
     "team2": {
       "name": "Switzerland",
       "code": "SUI",
-      "score": null
+      "score": 1
     },
-    "status": "SCHEDULED",
+    "status": "FINISHED",
     "officialDate": "2026-06-13",
-    "venue": "San Francisco Bay Area Stadium",
-    "stadium": "San Francisco Bay Area Stadium",
+    "utcDateString": "2026-06-13T23:30:00.000Z",
+    "venue": "Levi's Stadium, San Francisco",
+    "stadium": "Levi's Stadium, San Francisco",
     "venueTimeZone": "America/Los_Angeles",
     "isOpening": false,
-    "kickoffStatus": "date-only",
-    "source": "official-schedule"
+    "kickoffStatus": "confirmed",
+    "source": "official-schedule",
+    "bookings": [
+      {
+        "playerName": "Bassam Al-Rawi",
+        "card": "yellow",
+        "teamCode": "QAT",
+        "teamName": "Qatar"
+      },
+      {
+        "playerName": "Granit Xhaka",
+        "card": "yellow",
+        "teamCode": "SUI",
+        "teamName": "Switzerland"
+      }
+    ]
   },
   {
     "matchId": "M009",
@@ -191,21 +310,36 @@
     "team1": {
       "name": "Ivory Coast",
       "code": "CIV",
-      "score": null
+      "score": 1
     },
     "team2": {
       "name": "Ecuador",
       "code": "ECU",
-      "score": null
+      "score": 0
     },
-    "status": "SCHEDULED",
+    "status": "FINISHED",
     "officialDate": "2026-06-14",
-    "venue": "Philadelphia Stadium",
-    "stadium": "Philadelphia Stadium",
+    "utcDateString": "2026-06-14T16:00:00.000Z",
+    "venue": "Lincoln Financial Field, Filadelfia",
+    "stadium": "Lincoln Financial Field, Filadelfia",
     "venueTimeZone": "America/New_York",
     "isOpening": false,
-    "kickoffStatus": "date-only",
-    "source": "official-schedule"
+    "kickoffStatus": "confirmed",
+    "source": "official-schedule",
+    "bookings": [
+      {
+        "playerName": "Sébastien Haller",
+        "card": "yellow",
+        "teamCode": "CIV",
+        "teamName": "Ivory Coast"
+      },
+      {
+        "playerName": "Moisés Caicedo",
+        "card": "yellow",
+        "teamCode": "ECU",
+        "teamName": "Ecuador"
+      }
+    ]
   },
   {
     "matchId": "M010",
@@ -214,21 +348,30 @@
     "team1": {
       "name": "Germany",
       "code": "GER",
-      "score": null
+      "score": 7
     },
     "team2": {
       "name": "Curaçao",
       "code": "CUW",
-      "score": null
+      "score": 1
     },
-    "status": "SCHEDULED",
+    "status": "FINISHED",
     "officialDate": "2026-06-14",
-    "venue": "Houston Stadium",
-    "stadium": "Houston Stadium",
+    "utcDateString": "2026-06-14T19:00:00.000Z",
+    "venue": "NRG Stadium, Houston",
+    "stadium": "NRG Stadium, Houston",
     "venueTimeZone": "America/Chicago",
     "isOpening": false,
-    "kickoffStatus": "date-only",
-    "source": "official-schedule"
+    "kickoffStatus": "confirmed",
+    "source": "official-schedule",
+    "bookings": [
+      {
+        "playerName": "Leroy Sané",
+        "card": "yellow",
+        "teamCode": "GER",
+        "teamName": "Germany"
+      }
+    ]
   },
   {
     "matchId": "M011",
@@ -237,21 +380,36 @@
     "team1": {
       "name": "Netherlands",
       "code": "NED",
-      "score": null
+      "score": 2
     },
     "team2": {
       "name": "Japan",
       "code": "JPN",
-      "score": null
+      "score": 2
     },
-    "status": "SCHEDULED",
+    "status": "FINISHED",
     "officialDate": "2026-06-14",
-    "venue": "Dallas Stadium",
-    "stadium": "Dallas Stadium",
+    "utcDateString": "2026-06-14T22:00:00.000Z",
+    "venue": "AT&T Stadium, Dallas",
+    "stadium": "AT&T Stadium, Dallas",
     "venueTimeZone": "America/Chicago",
     "isOpening": false,
-    "kickoffStatus": "date-only",
-    "source": "official-schedule"
+    "kickoffStatus": "confirmed",
+    "source": "official-schedule",
+    "bookings": [
+      {
+        "playerName": "Virgil van Dijk",
+        "card": "yellow",
+        "teamCode": "NED",
+        "teamName": "Netherlands"
+      },
+      {
+        "playerName": "Wataru Endo",
+        "card": "yellow",
+        "teamCode": "JPN",
+        "teamName": "Japan"
+      }
+    ]
   },
   {
     "matchId": "M012",
@@ -260,20 +418,135 @@
     "team1": {
       "name": "Sweden",
       "code": "SWE",
-      "score": null
+      "score": 5
     },
     "team2": {
       "name": "Tunisia",
       "code": "TUN",
+      "score": 1
+    },
+    "status": "FINISHED",
+    "officialDate": "2026-06-14",
+    "utcDateString": "2026-06-14T23:30:00.000Z",
+    "venue": "Estadio BBVA, Monterrey",
+    "stadium": "Estadio BBVA, Monterrey",
+    "venueTimeZone": "America/Monterrey",
+    "isOpening": false,
+    "kickoffStatus": "confirmed",
+    "source": "official-schedule",
+    "bookings": [
+      {
+        "playerName": "Hamza Rafia",
+        "card": "yellow",
+        "teamCode": "TUN",
+        "teamName": "Tunisia"
+      },
+      {
+        "playerName": "Ellyes Skhiri",
+        "card": "yellow",
+        "teamCode": "TUN",
+        "teamName": "Tunisia"
+      }
+    ]
+  },
+  {
+    "matchId": "M013",
+    "stage": "Fase de Grupos (Grupo G)",
+    "groupId": "G",
+    "team1": {
+      "name": "Belgium",
+      "code": "BEL",
+      "score": null
+    },
+    "team2": {
+      "name": "Egypt",
+      "code": "EGY",
       "score": null
     },
     "status": "SCHEDULED",
-    "officialDate": "2026-06-14",
-    "venue": "Estadio Monterrey",
-    "stadium": "Estadio Monterrey",
-    "venueTimeZone": "America/Monterrey",
+    "officialDate": "2026-06-15",
+    "utcDateString": "2026-06-15T19:00:00.000Z",
+    "venue": "Lumen Field, Seattle",
+    "stadium": "Lumen Field, Seattle",
+    "venueTimeZone": "America/Los_Angeles",
     "isOpening": false,
-    "kickoffStatus": "date-only",
-    "source": "official-schedule"
+    "kickoffStatus": "confirmed",
+    "source": "official-schedule",
+    "bookings": []
+  },
+  {
+    "matchId": "M014",
+    "stage": "Fase de Grupos (Grupo G)",
+    "groupId": "G",
+    "team1": {
+      "name": "Iran",
+      "code": "IRN",
+      "score": null
+    },
+    "team2": {
+      "name": "New Zealand",
+      "code": "NZL",
+      "score": null
+    },
+    "status": "SCHEDULED",
+    "officialDate": "2026-06-16",
+    "utcDateString": "2026-06-16T06:00:00.000Z",
+    "venue": "SoFi Stadium, Los Ángeles",
+    "stadium": "SoFi Stadium, Los Ángeles",
+    "venueTimeZone": "America/Los_Angeles",
+    "isOpening": false,
+    "kickoffStatus": "confirmed",
+    "source": "official-schedule",
+    "bookings": []
+  },
+  {
+    "matchId": "M015",
+    "stage": "Fase de Grupos (Grupo H)",
+    "groupId": "H",
+    "team1": {
+      "name": "Spain",
+      "code": "ESP",
+      "score": null
+    },
+    "team2": {
+      "name": "Cabo Verde",
+      "code": "CPV",
+      "score": null
+    },
+    "status": "SCHEDULED",
+    "officialDate": "2026-06-15",
+    "utcDateString": "2026-06-15T16:00:00.000Z",
+    "venue": "AT&T Stadium, Dallas",
+    "stadium": "AT&T Stadium, Dallas",
+    "venueTimeZone": "America/Chicago",
+    "isOpening": false,
+    "kickoffStatus": "confirmed",
+    "source": "official-schedule",
+    "bookings": []
+  },
+  {
+    "matchId": "M016",
+    "stage": "Fase de Grupos (Grupo H)",
+    "groupId": "H",
+    "team1": {
+      "name": "Saudi Arabia",
+      "code": "KSA",
+      "score": null
+    },
+    "team2": {
+      "name": "Uruguay",
+      "code": "URU",
+      "score": null
+    },
+    "status": "SCHEDULED",
+    "officialDate": "2026-06-15",
+    "utcDateString": "2026-06-15T23:00:00.000Z",
+    "venue": "Hard Rock Stadium, Miami",
+    "stadium": "Hard Rock Stadium, Miami",
+    "venueTimeZone": "America/New_York",
+    "isOpening": false,
+    "kickoffStatus": "confirmed",
+    "source": "official-schedule",
+    "bookings": []
   }
 ]

@@ -10,20 +10,22 @@ export const TimeDisplay: React.FC<TimeDisplayProps> = ({ utcDateString, venueTi
   const { t } = useTranslation();
   const date = new Date(utcDateString);
 
-  // Format local time at venue
-  const localTime = new Intl.DateTimeFormat('en-US', {
+  // Format local time at venue using 24h format
+  const localTime = new Intl.DateTimeFormat('es-AR', {
     timeZone: venueTimeZone,
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
+    hourCycle: 'h23',
   }).format(date);
 
-  // Format time in Argentina
-  const argentinaTime = new Intl.DateTimeFormat('en-US', {
+  // Format time in Argentina using 24h format
+  const argentinaTime = new Intl.DateTimeFormat('es-AR', {
     timeZone: 'America/Argentina/Buenos_Aires',
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
+    hourCycle: 'h23',
   }).format(date);
 
   return (

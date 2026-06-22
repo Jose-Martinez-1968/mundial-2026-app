@@ -172,31 +172,6 @@ const assignThirdPlaceTeams = (thirdPlaceTeams: Standing[]): Map<string, Standin
   return backtrack(0, orderedTeams, new Map<string, Standing>()) || new Map<string, Standing>();
 };
 
-export const createInitialGroupMatches = (groups: Group[]): GroupMatch[] => {
-  const matches: GroupMatch[] = [];
-
-  groups.forEach(group => {
-    const pairs = [
-      [0, 1], [2, 3],
-      [0, 2], [1, 3],
-      [0, 3], [1, 2],
-    ];
-
-    pairs.forEach(([i, j], idx) => {
-      matches.push({
-        id: `G-${group.id}-${idx + 1}`,
-        groupId: group.id,
-        homeTeam: group.teams[i],
-        awayTeam: group.teams[j],
-        homeScore: null,
-        awayScore: null,
-      });
-    });
-  });
-
-  return matches;
-};
-
 export const calculateStandingsForGroups = (
   groups: Group[],
   matches: GroupMatch[],
@@ -252,6 +227,17 @@ export const calculateStandingsForGroups = (
 };
 
 export const getBestThirdPlacedTeams = (standings: Record<string, Standing[]>): Standing[] => {
+  // Check if we have 12 groups and all of them are completed (each team played 3 matches)
+  const groupIds = GROUPS_ORDER;
+  const allGroupsCompleted = groupIds.every(groupId => {
+    const groupTeams = standings[groupId];
+    return groupTeams && groupTeams.length === 4 && groupTeams.every(team => team.played === 3);
+  });
+
+  if (!allGroupsCompleted) {
+    return [];
+  }
+
   return GROUPS_ORDER
     .map(groupId => standings[groupId]?.[2])
     .filter((team): team is Standing => Boolean(team))
@@ -264,22 +250,28 @@ export const calculateRoundOf32FromStandings = (standings: Record<string, Standi
   const thirdAssignments = assignThirdPlaceTeams(bestThirds);
   const matches: KnockoutMatch[] = [];
 
-  matches.push({ id: 'R32-1', home: standings.A?.[1] || null, away: standings.B?.[1] || null });
-  matches.push({ id: 'R32-2', home: standings.E?.[0] || null, away: thirdAssignments.get('R32-2') || null });
-  matches.push({ id: 'R32-3', home: standings.F?.[0] || null, away: standings.C?.[1] || null });
-  matches.push({ id: 'R32-4', home: standings.C?.[0] || null, away: standings.F?.[1] || null });
-  matches.push({ id: 'R32-5', home: standings.I?.[0] || null, away: thirdAssignments.get('R32-5') || null });
-  matches.push({ id: 'R32-6', home: standings.E?.[1] || null, away: standings.I?.[1] || null });
-  matches.push({ id: 'R32-7', home: standings.A?.[0] || null, away: thirdAssignments.get('R32-7') || null });
-  matches.push({ id: 'R32-8', home: standings.L?.[0] || null, away: thirdAssignments.get('R32-8') || null });
-  matches.push({ id: 'R32-9', home: standings.D?.[0] || null, away: thirdAssignments.get('R32-9') || null });
-  matches.push({ id: 'R32-10', home: standings.G?.[0] || null, away: thirdAssignments.get('R32-10') || null });
-  matches.push({ id: 'R32-11', home: standings.K?.[1] || null, away: standings.L?.[1] || null });
-  matches.push({ id: 'R32-12', home: standings.H?.[0] || null, away: standings.J?.[1] || null });
-  matches.push({ id: 'R32-13', home: standings.B?.[0] || null, away: thirdAssignments.get('R32-13') || null });
-  matches.push({ id: 'R32-14', home: standings.J?.[0] || null, away: standings.H?.[1] || null });
-  matches.push({ id: 'R32-15', home: standings.K?.[0] || null, away: thirdAssignments.get('R32-15') || null });
-  matches.push({ id: 'R32-16', home: standings.D?.[1] || null, away: standings.G?.[1] || null });
+  const getTeamIfCompleted = (groupId: string, index: number): Standing | null => {
+    const groupTeams = standings[groupId];
+    const completed = groupTeams && groupTeams.length === 4 && groupTeams.every(t => t.played === 3);
+    return completed ? groupTeams[index] : null;
+  };
+
+  matches.push({ id: 'R32-1', home: getTeamIfCompleted('A', 1), away: getTeamIfCompleted('B', 1) });
+  matches.push({ id: 'R32-2', home: getTeamIfCompleted('E', 0), away: thirdAssignments.get('R32-2') || null });
+  matches.push({ id: 'R32-3', home: getTeamIfCompleted('F', 0), away: getTeamIfCompleted('C', 1) });
+  matches.push({ id: 'R32-4', home: getTeamIfCompleted('C', 0), away: getTeamIfCompleted('F', 1) });
+  matches.push({ id: 'R32-5', home: getTeamIfCompleted('I', 0), away: thirdAssignments.get('R32-5') || null });
+  matches.push({ id: 'R32-6', home: getTeamIfCompleted('E', 1), away: getTeamIfCompleted('I', 1) });
+  matches.push({ id: 'R32-7', home: getTeamIfCompleted('A', 0), away: thirdAssignments.get('R32-7') || null });
+  matches.push({ id: 'R32-8', home: getTeamIfCompleted('L', 0), away: thirdAssignments.get('R32-8') || null });
+  matches.push({ id: 'R32-9', home: getTeamIfCompleted('D', 0), away: thirdAssignments.get('R32-9') || null });
+  matches.push({ id: 'R32-10', home: getTeamIfCompleted('G', 0), away: thirdAssignments.get('R32-10') || null });
+  matches.push({ id: 'R32-11', home: getTeamIfCompleted('K', 1), away: getTeamIfCompleted('L', 1) });
+  matches.push({ id: 'R32-12', home: getTeamIfCompleted('H', 0), away: getTeamIfCompleted('J', 1) });
+  matches.push({ id: 'R32-13', home: getTeamIfCompleted('B', 0), away: thirdAssignments.get('R32-13') || null });
+  matches.push({ id: 'R32-14', home: getTeamIfCompleted('J', 0), away: getTeamIfCompleted('H', 1) });
+  matches.push({ id: 'R32-15', home: getTeamIfCompleted('K', 0), away: thirdAssignments.get('R32-15') || null });
+  matches.push({ id: 'R32-16', home: getTeamIfCompleted('D', 1), away: getTeamIfCompleted('G', 1) });
 
   return matches;
 };

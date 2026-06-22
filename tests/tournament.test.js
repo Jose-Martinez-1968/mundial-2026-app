@@ -194,3 +194,48 @@ test('match validator rejects confirmed matches without UTC kickoff', () => {
     },
   ]), /registros invalidos/);
 });
+
+test('match validator rejects simulated data sources', () => {
+  assert.throws(() => validateMatches([
+    {
+      matchId: 'M001',
+      stage: 'Fase de Grupos (Grupo A)',
+      team1: { name: 'Mexico', code: 'MEX', score: null },
+      team2: { name: 'South Africa', code: 'RSA', score: null },
+      status: 'SCHEDULED',
+      officialDate: '2026-06-11',
+      utcDateString: '2026-06-11T19:00:00.000Z',
+      venue: 'Mexico City Stadium',
+      venueTimeZone: 'America/Mexico_City',
+      kickoffStatus: 'confirmed',
+      source: 'simulation',
+    },
+  ]), /registros invalidos/);
+});
+
+test('match validator normalizes red card aliases and keeps team metadata', () => {
+  const matches = validateMatches([
+    {
+      matchId: 'M020',
+      stage: 'Fase de Grupos (Grupo A)',
+      team1: { name: 'Mexico', code: 'MEX', score: 1 },
+      team2: { name: 'South Africa', code: 'RSA', score: 1 },
+      status: 'FINISHED',
+      officialDate: '2026-06-20',
+      utcDateString: '2026-06-20T19:00:00.000Z',
+      venue: 'Mexico City Stadium',
+      venueTimeZone: 'America/Mexico_City',
+      kickoffStatus: 'confirmed',
+      source: 'official-api',
+      bookings: [
+        { playerName: 'Example Defender', teamName: 'Mexico', card: 'red_card' },
+        { playerName: 'Example Forward', teamCode: 'RSA', card: 'second-yellow' },
+      ],
+    },
+  ]);
+
+  assert.equal(matches[0].bookings[0].card, 'red');
+  assert.equal(matches[0].bookings[0].teamName, 'Mexico');
+  assert.equal(matches[0].bookings[1].card, 'red');
+  assert.equal(matches[0].bookings[1].teamCode, 'RSA');
+});

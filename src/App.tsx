@@ -7,13 +7,11 @@ import {
   BellRing,
   Calendar,
   Globe,
-  List,
   MapPin,
   MessageCircle,
   RefreshCcw,
   Send,
   Swords,
-  Trash2,
   Trophy,
 } from 'lucide-react';
 import fifaData from './data/fifaData.json';
@@ -24,24 +22,21 @@ import { MatchDetailModal } from './components/MatchDetailModal';
 import { StandingsTable } from './components/StandingsTable';
 import { TeamStatsTab } from './components/TeamStatsTab';
 import { VenueCarousel } from './components/VenueCarousel';
-import { generatePlayersForTeams } from './data/playersData';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { NotificationEngine } from './modules/alerts/NotificationEngine';
+import { fetchTournamentData } from './services/api';
+import { getMatchDeviceDateKey, getTodayDateKey } from './services/dateFilters';
 import { validateMatches } from './services/matchValidation';
+import { createRealtimeSync } from './services/realtimeSync';
 import {
-  clearCautionAccumulation,
   normalizePlayerDiscipline,
-  registerRedCard,
-  registerYellowCard,
-  serveSuspensionIfEligible,
 } from './modules/simulator/DisciplinaryEngine';
 import {
   calculateNextRound,
   calculateRoundOf32,
   calculateStandings,
-  generateInitialGroupMatches,
 } from './modules/simulator/BracketGenerator';
-import type { GroupMatch, KnockoutMatch, MatchDTO, Standing, Team, Venue } from './types';
+import type { GroupMatch, KnockoutMatch, MatchDTO, Team, Venue } from './types';
 
 type TabId = 'matches' | 'groups' | 'bracket' | 'venues' | 'stats';
 
@@ -50,12 +45,6 @@ type TabConfig = {
   label: string;
   icon: ReactNode;
 };
-
-type KnockoutScoreState = Record<string, {
-  homeScore: number | null;
-  awayScore: number | null;
-  winner?: Standing | null;
-}>;
 
 const InstagramIcon = ({ size = 17 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" fill="none">
@@ -80,11 +69,24 @@ const WHATSAPP_FEEDBACK_MESSAGE = [
 
 const TABS: TabConfig[] = [
   { id: 'matches', label: 'Partidos', icon: <Calendar size={18} /> },
-  { id: 'groups', label: 'Grupos (A-L)', icon: <List size={18} /> },
+  { id: 'groups', label: 'Grupos (A-L)', icon: <ListIcon size={18} /> },
   { id: 'stats', label: 'Estadisticas', icon: <Trophy size={18} /> },
   { id: 'bracket', label: 'Llaves R32', icon: <Swords size={18} /> },
   { id: 'venues', label: 'Sedes', icon: <MapPin size={18} /> },
 ];
+
+function ListIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="8" y1="6" x2="21" y2="6"></line>
+      <line x1="8" y1="12" x2="21" y2="12"></line>
+      <line x1="8" y1="18" x2="21" y2="18"></line>
+      <line x1="3" y1="6" x2="3.01" y2="6"></line>
+      <line x1="3" y1="12" x2="3.01" y2="12"></line>
+      <line x1="3" y1="18" x2="3.01" y2="18"></line>
+    </svg>
+  );
+}
 
 const TAB_STYLES: Record<TabId, string> = {
   matches: 'bg-blue-600 shadow-blue-500/20',
@@ -94,102 +96,283 @@ const TAB_STYLES: Record<TabId, string> = {
   venues: 'bg-rose-600 shadow-rose-500/20',
 };
 
-const parseScoreInput = (value: string): number | null => {
-  if (value === '') return null;
-  const parsed = Number.parseInt(value, 10);
-  return Number.isNaN(parsed) ? null : Math.max(0, parsed);
-};
-
-const normalizeName = (name: string): string => {
-  return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-};
-
 const createTeams = (): Team[] => {
   const flatTeams = fifaData.groups.flatMap(group => group.teams) as Team[];
-  const players = generatePlayersForTeams(flatTeams.map(team => team.code));
 
   return flatTeams.map(team => ({
     ...team,
-    players: players
-      .filter(player => player.teamCode === team.code)
-      .map(normalizePlayerDiscipline),
+    players: [],
   }));
 };
 
-const isKnockoutMatchCompleted = (match: KnockoutMatch): boolean => {
-  if (!match.home || !match.away) return false;
-  if (match.homeScore === null || match.homeScore === undefined) return false;
-  if (match.awayScore === null || match.awayScore === undefined) return false;
-  if (match.homeScore !== match.awayScore) return true;
-  return Boolean(match.winner);
+const normalizeName = (value: string): string => {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 };
 
-const buildCompletedMatchesByTeam = (
-  groupMatches: GroupMatch[],
-  knockoutRounds: KnockoutMatch[][],
-): Record<string, number> => {
-  const counts: Record<string, number> = {};
+const sameName = (a: string | undefined, b: string | undefined): boolean => {
+  return Boolean(a && b && normalizeName(a) === normalizeName(b));
+};
 
-  const add = (teamCode: string | undefined) => {
-    if (!teamCode) return;
-    counts[teamCode] = (counts[teamCode] || 0) + 1;
+const splitPlayerName = (playerName: string): { firstName: string; lastName: string } => {
+  const parts = playerName.trim().split(/\s+/);
+  if (parts.length <= 1) {
+    return { firstName: '', lastName: playerName.trim() };
+  }
+
+  return {
+    firstName: parts.slice(0, -1).join(' '),
+    lastName: parts[parts.length - 1],
   };
+};
 
-  groupMatches.forEach(match => {
-    if (match.homeScore === null || match.awayScore === null) return;
-    add(match.homeTeam.code);
-    add(match.awayTeam.code);
-  });
+const resolveBookingTeamCode = (match: MatchDTO, bookingIndex: number): string | null => {
+  const booking = match.bookings?.[bookingIndex];
+  const teamCodes = [match.team1.code, match.team2.code].filter(Boolean);
 
-  knockoutRounds.forEach(round => {
-    round.forEach(match => {
-      if (!isKnockoutMatchCompleted(match)) return;
-      add(match.home?.code);
-      add(match.away?.code);
-    });
-  });
+  if (booking?.teamCode && teamCodes.includes(booking.teamCode)) {
+    return booking.teamCode;
+  }
 
-  return counts;
+  if (booking?.teamName) {
+    if (sameName(booking.teamName, match.team1.name)) return match.team1.code || null;
+    if (sameName(booking.teamName, match.team2.name)) return match.team2.code || null;
+  }
+
+  if (match.bookings?.length === 2) {
+    return bookingIndex === 0 ? match.team1.code || null : match.team2.code || null;
+  }
+
+  return null;
 };
 
 function App() {
   const { t, i18n } = useTranslation();
-  const [matches, setMatches] = useState<MatchDTO[]>([]);
+  
+  // Connection state
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  // Cached matches initialization as offline fallback
+  const [matches, setMatches] = useState<MatchDTO[]>(() => {
+    try {
+      const cached = localStorage.getItem('wc2026_cached_matches');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        return validateMatches(parsed);
+      }
+    } catch (e) {
+      console.error('Error cargando partidos cacheados:', e);
+    }
+    return [];
+  });
+
   const [calendarError, setCalendarError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(matches.length === 0);
   const [lastUpdate, setLastUpdate] = useState('');
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMatchForModal, setSelectedMatchForModal] = useState<KnockoutMatch | null>(null);
 
   const [activeTab, setActiveTab] = useLocalStorage<TabId>('wc2026_active_tab', 'groups');
   const [notificationsEnabled, setNotificationsEnabled] = useLocalStorage<boolean>('wc2026_notifications', false);
-  const [liveMode, setLiveMode] = useLocalStorage<boolean>('wc2026_live_mode', false);
-  const [groupMatches, setGroupMatches] = useLocalStorage('wc2026_group_matches', generateInitialGroupMatches);
-  const [teams, setTeams] = useLocalStorage<Team[]>('wc2026_teams', createTeams);
-  const [knockoutScores, setKnockoutScores] = useLocalStorage<KnockoutScoreState>('wc2026_knockout_scores', {});
 
-  const standings = useMemo(() => calculateStandings(groupMatches, teams), [groupMatches, teams]);
+  // Fetch matches from server
+  const fetchMatches = useCallback(async () => {
+    try {
+      const { matches: nextMatches } = await fetchTournamentData();
 
-  const withStoredScores = useCallback((bracket: KnockoutMatch[]): KnockoutMatch[] => {
-    return bracket.map(match => ({
-      ...match,
-      homeScore: knockoutScores[match.id]?.homeScore ?? null,
-      awayScore: knockoutScores[match.id]?.awayScore ?? null,
-      winner: knockoutScores[match.id]?.winner ?? null,
-    }));
-  }, [knockoutScores]);
+      setMatches(nextMatches);
+      localStorage.setItem('wc2026_cached_matches', JSON.stringify(nextMatches));
+      setCalendarError(null);
+      setLastUpdate(new Date().toLocaleTimeString());
+      if (notificationsEnabled) NotificationEngine.checkMatchesAndNotify(nextMatches);
+    } catch (error) {
+      console.error('No se pudo cargar el calendario:', error);
+      if (matches.length === 0) {
+        setCalendarError('No se pudo establecer conexión y no hay datos locales cargados.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [notificationsEnabled, matches.length]);
 
-  const r32Bracket = useMemo(() => withStoredScores(calculateRoundOf32(standings)), [standings, withStoredScores]);
-  const r16Bracket = useMemo(() => withStoredScores(calculateNextRound(r32Bracket, 'R16')), [r32Bracket, withStoredScores]);
-  const qfBracket = useMemo(() => withStoredScores(calculateNextRound(r16Bracket, 'QF')), [r16Bracket, withStoredScores]);
-  const sfBracket = useMemo(() => withStoredScores(calculateNextRound(qfBracket, 'SF')), [qfBracket, withStoredScores]);
-  const finalBracket = useMemo(() => withStoredScores(calculateNextRound(sfBracket, 'FINAL')), [sfBracket, withStoredScores]);
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      setNotificationsEnabled(true);
+    }
 
-  const completedMatchesByTeam = useMemo(() => {
-    return buildCompletedMatchesByTeam(groupMatches, [r32Bracket, r16Bracket, qfBracket, sfBracket, finalBracket]);
-  }, [groupMatches, r32Bracket, r16Bracket, qfBracket, sfBracket, finalBracket]);
+    return createRealtimeSync({
+      onStatusChange: setIsOnline,
+      onSync: fetchMatches,
+    });
+  }, [fetchMatches, setNotificationsEnabled]);
 
+  // Derived: Dynamic Bookings & Suspensions Data Pipeline
+  const enrichedTeams = useMemo(() => {
+    const baseTeams = createTeams();
+    const playersMap = new Map<string, {
+      teamCode: string;
+      name: string;
+      yellow: number;
+      red: number;
+    }>();
+
+    matches.forEach(match => {
+      const matchBookings = match.bookings || [];
+      matchBookings.forEach((booking, bookingIndex) => {
+        const teamCode = resolveBookingTeamCode(match, bookingIndex);
+        if (!teamCode) return;
+
+        const playerKey = `${teamCode}:${normalizeName(booking.playerName)}`;
+        const current = playersMap.get(playerKey) || {
+          teamCode,
+          name: booking.playerName.trim(),
+          yellow: 0,
+          red: 0,
+        };
+
+        if (booking.card === 'yellow') current.yellow += 1;
+        if (booking.card === 'red') current.red += 1;
+        playersMap.set(playerKey, current);
+      });
+    });
+
+    return baseTeams.map(team => {
+      const updatedPlayers = [...playersMap.entries()]
+        .filter(([, player]) => player.teamCode === team.code)
+        .map(([playerKey, player]) => {
+          const nameParts = splitPlayerName(player.name);
+          let yellowAccumulated = 0;
+          let suspensionRemaining = 0;
+          const teamFinishedMatches = matches
+            .filter(m => m.status === 'FINISHED' && (m.team1.code === team.code || m.team2.code === team.code))
+            .sort((a, b) => (a.utcDateString || a.officialDate).localeCompare(b.utcDateString || b.officialDate));
+
+          teamFinishedMatches.forEach((match) => {
+            if (suspensionRemaining > 0) {
+              suspensionRemaining -= 1;
+            }
+
+            const matchBookings = match.bookings || [];
+            matchBookings.forEach((booking, bookingIndex) => {
+              const bookingTeamCode = resolveBookingTeamCode(match, bookingIndex);
+              if (bookingTeamCode !== team.code) return;
+              if (normalizeName(booking.playerName) !== normalizeName(player.name)) return;
+
+              if (booking.card === 'yellow') {
+                yellowAccumulated += 1;
+                if (yellowAccumulated === 2) {
+                  suspensionRemaining += 1;
+                  yellowAccumulated = 0;
+                }
+              }
+
+              if (booking.card === 'red') {
+                suspensionRemaining += 1;
+              }
+            });
+          });
+
+          return normalizePlayerDiscipline({
+            id: playerKey,
+            teamCode: team.code,
+            firstName: nameParts.firstName,
+            lastName: nameParts.lastName,
+            yellowCards: player.yellow,
+            redCards: player.red,
+            suspensionMatchesRemaining: suspensionRemaining,
+            suspensionIssuedAtMatchCount: null,
+          });
+        })
+        .sort((a, b) => a.lastName.localeCompare(b.lastName));
+
+      return {
+        ...team,
+        players: updatedPlayers,
+      };
+    });
+  }, [matches]);
+
+  // Derived: Group Matches in Tournament format
+  const groupMatches = useMemo((): GroupMatch[] => {
+    const groupStageMatches = matches.filter(m => m.groupId);
+    const flatTeams = enrichedTeams;
+    return groupStageMatches.map(m => {
+      const homeTeam = flatTeams.find(t => t.code === m.team1.code) || {
+        name: m.team1.name,
+        code: m.team1.code || '',
+        flag: '',
+        continent: '',
+        seed: false,
+      };
+      const awayTeam = flatTeams.find(t => t.code === m.team2.code) || {
+        name: m.team2.name,
+        code: m.team2.code || '',
+        flag: '',
+        continent: '',
+        seed: false,
+      };
+      return {
+        id: m.matchId,
+        groupId: m.groupId!,
+        homeTeam,
+        awayTeam,
+        homeScore: m.team1.score,
+        awayScore: m.team2.score,
+      };
+    });
+  }, [matches, enrichedTeams]);
+
+  // Derived: Standings
+  const standings = useMemo(() => calculateStandings(groupMatches, enrichedTeams), [groupMatches, enrichedTeams]);
+
+  // Helper function to resolve knockout scores directly from matches fetched
+  const withRealScores = useCallback((bracket: KnockoutMatch[]): KnockoutMatch[] => {
+    return bracket.map(match => {
+      const realMatch = matches.find(m => m.matchId === match.id);
+      if (realMatch) {
+        let winner = null;
+        if (realMatch.team1.score !== null && realMatch.team2.score !== null) {
+          if (realMatch.team1.score > realMatch.team2.score) {
+            winner = match.home;
+          } else if (realMatch.team2.score > realMatch.team1.score) {
+            winner = match.away;
+          } else {
+            winner =
+              realMatch.winnerCode === match.home?.code
+                ? match.home
+                : realMatch.winnerCode === match.away?.code
+                ? match.away
+                : null;
+          }
+        }
+        return {
+          ...match,
+          homeScore: realMatch.team1.score,
+          awayScore: realMatch.team2.score,
+          winner,
+        };
+      }
+      return {
+        ...match,
+        homeScore: null,
+        awayScore: null,
+        winner: null,
+      };
+    });
+  }, [matches]);
+
+  // Brackets calculations
+  const r32Bracket = useMemo(() => withRealScores(calculateRoundOf32(standings)), [standings, withRealScores]);
+  const r16Bracket = useMemo(() => withRealScores(calculateNextRound(r32Bracket, 'R16')), [r32Bracket, withRealScores]);
+  const qfBracket = useMemo(() => withRealScores(calculateNextRound(r16Bracket, 'QF')), [r16Bracket, withRealScores]);
+  const sfBracket = useMemo(() => withRealScores(calculateNextRound(qfBracket, 'SF')), [qfBracket, withRealScores]);
+  const finalBracket = useMemo(() => withRealScores(calculateNextRound(sfBracket, 'FINAL')), [sfBracket, withRealScores]);
+
+  // Filtering for groups list
   const filteredGroupIds = useMemo(() => {
     const term = searchTerm.toLowerCase().trim();
     const ids = Object.keys(standings).sort();
@@ -216,202 +399,6 @@ function App() {
     }));
   }, []);
 
-  const simulatedMatchesCount = useMemo(() => {
-    return groupMatches.filter(match => match.homeScore !== null && match.awayScore !== null).length;
-  }, [groupMatches]);
-
-  const fetchMatches = useCallback(async () => {
-    try {
-      const response = await fetch(`/data/matches.json?t=${Date.now()}`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const data = await response.json() as unknown;
-      const nextMatches = validateMatches(data);
-
-      setMatches(nextMatches);
-      setCalendarError(null);
-      setLastUpdate(new Date().toLocaleTimeString());
-      if (notificationsEnabled) NotificationEngine.checkMatchesAndNotify(nextMatches);
-    } catch (error) {
-      console.error('No se pudo cargar el calendario:', error);
-      setMatches([]);
-      setCalendarError('No se pudo cargar un calendario valido. La simulacion local sigue disponible.');
-    } finally {
-      setLoading(false);
-    }
-  }, [notificationsEnabled]);
-
-  useEffect(() => {
-    setTeams(previousTeams => {
-      let changed = false;
-      const nextTeams = previousTeams.map(team => ({
-        ...team,
-        players: team.players?.map(player => {
-          const normalized = normalizePlayerDiscipline(player);
-          if (
-            normalized.yellowCards !== player.yellowCards ||
-            normalized.redCards !== player.redCards ||
-            normalized.suspensionMatchesRemaining !== player.suspensionMatchesRemaining ||
-            normalized.suspensionIssuedAtMatchCount !== player.suspensionIssuedAtMatchCount
-          ) {
-            changed = true;
-          }
-          return normalized;
-        }),
-      }));
-      return changed ? nextTeams : previousTeams;
-    });
-  }, [setTeams]);
-
-  useEffect(() => {
-    setTeams(previousTeams => {
-      let changed = false;
-      const nextTeams = previousTeams.map(team => ({
-        ...team,
-        players: team.players?.map(player => {
-          const served = serveSuspensionIfEligible(
-            normalizePlayerDiscipline(player),
-            completedMatchesByTeam[team.code] || 0,
-          );
-          if (
-            served.suspensionMatchesRemaining !== player.suspensionMatchesRemaining ||
-            served.suspensionIssuedAtMatchCount !== player.suspensionIssuedAtMatchCount
-          ) {
-            changed = true;
-          }
-          return served;
-        }),
-      }));
-      return changed ? nextTeams : previousTeams;
-    });
-  }, [completedMatchesByTeam, setTeams]);
-
-  useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'granted') {
-      setNotificationsEnabled(true);
-    }
-
-    void fetchMatches();
-    const interval = window.setInterval(fetchMatches, 30000);
-    return () => window.clearInterval(interval);
-  }, [fetchMatches, setNotificationsEnabled]);
-
-  useEffect(() => {
-    if (!liveMode || matches.length === 0) return;
-
-    setGroupMatches(previousMatches => {
-      let changed = false;
-      const nextMatches = previousMatches.map(groupMatch => {
-        const liveMatch = matches.find(match => {
-          const team1 = normalizeName(match.team1.name);
-          const team2 = normalizeName(match.team2.name);
-          const home = normalizeName(groupMatch.homeTeam.name);
-          const away = normalizeName(groupMatch.awayTeam.name);
-          return (team1 === home && team2 === away) || (team1 === away && team2 === home);
-        });
-
-        if (!liveMatch || (liveMatch.status !== 'LIVE' && liveMatch.status !== 'FINISHED')) {
-          return groupMatch;
-        }
-
-        const liveHomeIsGroupHome = normalizeName(liveMatch.team1.name) === normalizeName(groupMatch.homeTeam.name);
-        const homeScore = liveHomeIsGroupHome ? liveMatch.team1.score : liveMatch.team2.score;
-        const awayScore = liveHomeIsGroupHome ? liveMatch.team2.score : liveMatch.team1.score;
-
-        if (groupMatch.homeScore === homeScore && groupMatch.awayScore === awayScore) {
-          return groupMatch;
-        }
-
-        changed = true;
-        return { ...groupMatch, homeScore, awayScore };
-      });
-
-      return changed ? nextMatches : previousMatches;
-    });
-  }, [liveMode, matches, setGroupMatches]);
-
-  const updateMatchScore = (matchId: string, side: 'home' | 'away', score: number | null) => {
-    setGroupMatches(previousMatches => previousMatches.map(match => {
-      if (match.id !== matchId) return match;
-      return { ...match, [side === 'home' ? 'homeScore' : 'awayScore']: score };
-    }));
-  };
-
-  const addYellowCard = (playerId: string) => {
-    setTeams(previousTeams => previousTeams.map(team => ({
-      ...team,
-      players: team.players?.map(player => (
-        player.id === playerId
-          ? registerYellowCard(player, completedMatchesByTeam[team.code] || 0)
-          : normalizePlayerDiscipline(player)
-      )),
-    })));
-  };
-
-  const addRedCard = (playerId: string) => {
-    setTeams(previousTeams => previousTeams.map(team => ({
-      ...team,
-      players: team.players?.map(player => (
-        player.id === playerId
-          ? registerRedCard(player, completedMatchesByTeam[team.code] || 0)
-          : normalizePlayerDiscipline(player)
-      )),
-    })));
-  };
-
-  const clearYellowCards = () => {
-    if (!window.confirm('Limpiar tarjetas amarillas simples para la fase eliminatoria? Las rojas y suspensiones pendientes se mantienen.')) return;
-
-    setTeams(previousTeams => previousTeams.map(team => ({
-      ...team,
-      players: team.players?.map(player => clearCautionAccumulation(player)),
-    })));
-  };
-
-  const resetResults = () => {
-    if (!window.confirm('Borrar todos los resultados simulados y reiniciar la memoria?')) return;
-
-    setGroupMatches(generateInitialGroupMatches());
-    setKnockoutScores({});
-    setSelectedGroupId(null);
-    setTeams(createTeams());
-  };
-
-  const updateKnockoutScore = (matchId: string, side: 'home' | 'away', score: number | null, match: KnockoutMatch) => {
-    setKnockoutScores(previousScores => {
-      const current = previousScores[matchId] || { homeScore: null, awayScore: null, winner: null };
-      const next = { ...current, [side === 'home' ? 'homeScore' : 'awayScore']: score };
-      let winner = next.winner;
-
-      if (next.homeScore !== null && next.awayScore !== null) {
-        if (next.homeScore > next.awayScore) winner = match.home;
-        if (next.awayScore > next.homeScore) winner = match.away;
-        if (next.homeScore === next.awayScore) winner = null;
-      } else {
-        winner = null;
-      }
-
-      return { ...previousScores, [matchId]: { ...next, winner } };
-    });
-  };
-
-  const setKnockoutWinner = (matchId: string, winner: Standing | null) => {
-    setKnockoutScores(previousScores => ({
-      ...previousScores,
-      [matchId]: { ...(previousScores[matchId] || { homeScore: null, awayScore: null }), winner },
-    }));
-  };
-
-  const enableNotifications = async () => {
-    const granted = await NotificationEngine.requestPermission();
-    setNotificationsEnabled(granted);
-    if (granted) NotificationEngine.checkMatchesAndNotify(matches);
-  };
-
-  const toggleLanguage = () => {
-    void i18n.changeLanguage(i18n.language === 'es' ? 'en' : 'es');
-  };
-
   const getNextMatchForVenue = (venueName: string) => {
     const nextMatch = matches.find(match => {
       return match.venue === venueName && (match.status === 'SCHEDULED' || match.status === 'LIVE');
@@ -423,27 +410,47 @@ function App() {
 
     return {
       teams: `${nextMatch.team1.name} vs ${nextMatch.team2.name}`,
-      date: nextMatch.kickoffStatus === 'date-only'
-        ? new Date(`${nextMatch.officialDate}T00:00:00`).toLocaleDateString()
-        : new Date(nextMatch.utcDateString || nextMatch.officialDate).toLocaleDateString(),
+      date: new Date(nextMatch.utcDateString || nextMatch.officialDate).toLocaleDateString(),
     };
+  };
+
+  // Dynamic Today's Date Filter for "Partidos"
+  const todayDateString = useMemo(() => getTodayDateKey(), []);
+
+  const matchesToday = useMemo(() => {
+    return matches.filter(match => getMatchDeviceDateKey(match.utcDateString, match.officialDate) === todayDateString);
+  }, [matches, todayDateString]);
+
+  const completedMatchesCount = useMemo(() => {
+    return matches.filter(m => m.status === 'FINISHED').length;
+  }, [matches]);
+
+  const enableNotifications = async () => {
+    const granted = await NotificationEngine.requestPermission();
+    setNotificationsEnabled(granted);
+    if (granted) NotificationEngine.checkMatchesAndNotify(matches);
+  };
+
+  const toggleLanguage = () => {
+    void i18n.changeLanguage(i18n.language === 'es' ? 'en' : 'es');
   };
 
   const renderKnockoutMatches = (bracketMatches: KnockoutMatch[]) => {
     return bracketMatches.map((match, idx) => {
-      const homeTeamData = teams.find(team => team.code === match.home?.code);
-      const awayTeamData = teams.find(team => team.code === match.away?.code);
+      const homeTeamData = enrichedTeams.find(team => team.code === match.home?.code);
+      const awayTeamData = enrichedTeams.find(team => team.code === match.away?.code);
       const hasSuspensions = (team: Team | undefined) => {
         return team?.players?.some(player => player.suspensionMatchesRemaining > 0) || false;
       };
       const matchHasSuspensions = hasSuspensions(homeTeamData) || hasSuspensions(awayTeamData);
-      const isDraw = match.homeScore !== null && match.awayScore !== null && match.homeScore === match.awayScore;
 
       if (!match.home || !match.away) {
         return (
-          <div key={match.id} className="bg-slate-800/40 border border-slate-700/50 p-4 rounded-xl text-center text-slate-500 text-xs italic">
-            Esperando clasificados para {match.id}
-          </div>
+          <div
+            key={match.id}
+            aria-label={`Cruce ${match.id} pendiente de confirmacion oficial`}
+            className="min-h-[9.5rem] bg-slate-800/20 border border-dashed border-slate-700/50 p-4 rounded-xl"
+          />
         );
       }
 
@@ -484,28 +491,22 @@ function App() {
 
           <div className="flex flex-col gap-2 relative z-10">
             <div
-              onClick={() => isDraw && setKnockoutWinner(match.id, match.home)}
               className={`flex justify-between items-center bg-slate-900/60 px-3 py-2 rounded-lg border transition-all ${
                 match.winner?.code === match.home.code
                   ? 'border-emerald-500/50 ring-1 ring-emerald-500/30 bg-emerald-500/5'
                   : 'border-white/5'
-              } ${isDraw ? 'cursor-pointer hover:bg-slate-800' : ''}`}
+              }`}
             >
               <div className="flex items-center gap-2.5 font-bold text-slate-200 min-w-0">
                 <Flag code={match.home.code} name={match.home.name} size={26} />
                 <span className="text-sm truncate">{match.home.name}</span>
-                {isDraw && match.winner?.code === match.home.code && (
-                  <span className="text-[10px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full">PEN</span>
+                {match.winner?.code === match.home.code && (
+                  <span className="text-[10px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full">GANÓ</span>
                 )}
               </div>
-              <input
-                type="number"
-                min="0"
-                value={match.homeScore === null || match.homeScore === undefined ? '' : match.homeScore}
-                onChange={(event) => updateKnockoutScore(match.id, 'home', parseScoreInput(event.target.value), match)}
-                onClick={(event) => event.stopPropagation()}
-                className="w-8 h-8 bg-slate-800 border border-slate-700 text-center rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold text-emerald-400"
-              />
+              <span className="w-8 text-center font-bold text-emerald-400 text-base">
+                {match.homeScore === null || match.homeScore === undefined ? '-' : match.homeScore}
+              </span>
             </div>
 
             <div className="flex items-center justify-center gap-2">
@@ -515,42 +516,23 @@ function App() {
             </div>
 
             <div
-              onClick={() => isDraw && setKnockoutWinner(match.id, match.away)}
               className={`flex justify-between items-center bg-slate-900/60 px-3 py-2 rounded-lg border transition-all ${
                 match.winner?.code === match.away.code
                   ? 'border-emerald-500/50 ring-1 ring-emerald-500/30 bg-emerald-500/5'
                   : 'border-white/5'
-              } ${isDraw ? 'cursor-pointer hover:bg-slate-800' : ''}`}
+              }`}
             >
               <div className="flex items-center gap-2.5 font-bold text-slate-200 min-w-0">
                 <Flag code={match.away.code} name={match.away.name} size={26} />
                 <span className="text-sm truncate">{match.away.name}</span>
-                {isDraw && match.winner?.code === match.away.code && (
-                  <span className="text-[10px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full">PEN</span>
+                {match.winner?.code === match.away.code && (
+                  <span className="text-[10px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full">GANÓ</span>
                 )}
               </div>
-              <input
-                type="number"
-                min="0"
-                value={match.awayScore === null || match.awayScore === undefined ? '' : match.awayScore}
-                onChange={(event) => updateKnockoutScore(match.id, 'away', parseScoreInput(event.target.value), match)}
-                onClick={(event) => event.stopPropagation()}
-                className="w-8 h-8 bg-slate-800 border border-slate-700 text-center rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold text-emerald-400"
-              />
+              <span className="w-8 text-center font-bold text-emerald-400 text-base">
+                {match.awayScore === null || match.awayScore === undefined ? '-' : match.awayScore}
+              </span>
             </div>
-
-            <AnimatePresence>
-              {isDraw && !match.winner && (
-                <motion.p
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="text-[10px] text-amber-400 font-bold text-center mt-1 bg-amber-500/10 py-1 rounded border border-amber-500/20"
-                >
-                  Empate: haz clic en el equipo que gano por penales
-                </motion.p>
-              )}
-            </AnimatePresence>
           </div>
         </motion.div>
       );
@@ -563,7 +545,7 @@ function App() {
         <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-cyan-400/30 bg-black shadow-[0_0_24px_rgba(34,211,238,0.22)] ring-1 ring-white/10">
-              <img 
+              <img
                 src="/brand/world-cup-2026-logo.png"
                 alt="Logo Copa Mundial 2026"
                 className="h-12 w-auto object-contain drop-shadow-[0_0_10px_rgba(250,204,21,0.18)]"
@@ -574,20 +556,30 @@ function App() {
                 {t('title')}
               </h1>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Simulacion controlada</span>
+                <span className="flex h-1.5 w-1.5 rounded-full bg-cyan-500 animate-pulse" />
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Datos oficiales en tiempo real</span>
                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest ml-1 border-l border-white/10 pl-2">
-                  {simulatedMatchesCount} / {groupMatches.length} simulados
+                  {completedMatchesCount} / {matches.length} jugados
                 </span>
               </div>
             </div>
           </div>
 
           <div className="flex-1 max-w-md hidden md:block">
-            <GlobalSearch teams={teams} onSelectResult={() => setActiveTab('stats')} />
+            <GlobalSearch teams={enrichedTeams} onSelectResult={() => setActiveTab('stats')} />
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Status indicator */}
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all duration-300 ${
+              isOnline
+                ? 'bg-emerald-950/30 border-emerald-500/30 text-emerald-400'
+                : 'bg-rose-950/30 border-rose-500/30 text-rose-400 animate-pulse'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-rose-500'}`} />
+              {isOnline ? 'En línea' : 'Sin conexión'}
+            </div>
+
             <button
               onClick={() => { void enableNotifications(); }}
               className={`p-2 rounded-lg border transition-all ${notificationsEnabled ? 'bg-emerald-900/30 border-emerald-500/50 text-emerald-400' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-400'}`}
@@ -661,15 +653,15 @@ function App() {
                 {activeTab === 'matches' && (
                   <div className="space-y-5">
                     <div className="p-4 bg-blue-950/30 border border-blue-500/20 text-blue-200 rounded-xl text-sm">
-                      Dataset local: {matches.length} de {OFFICIAL_TOTAL_MATCHES} partidos oficiales cargados. Los partidos con solo fecha no tienen horario validado.
+                      Partidos programados para hoy ({new Date(todayDateString + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}):
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      {matches.length === 0 ? (
-                        <p className="col-span-2 text-center text-slate-500 py-10">
-                          No hay partidos validos para mostrar.
+                      {matchesToday.length === 0 ? (
+                        <p className="col-span-2 text-center text-slate-500 py-10 bg-slate-900/40 border border-white/5 rounded-xl">
+                          No hay partidos programados para el día de hoy.
                         </p>
                       ) : (
-                        matches.map(match => <MatchCard key={match.matchId} {...match} />)
+                        matchesToday.map(match => <MatchCard key={match.matchId} {...match} />)
                       )}
                     </div>
                   </div>
@@ -692,15 +684,9 @@ function App() {
                         <div className="flex gap-3">
                           <Trophy className="shrink-0 mt-0.5" size={20} />
                           <p>
-                            <strong>Fase de grupos interactiva:</strong> ingresa resultados para simular posiciones.
+                            <strong>Fase de grupos:</strong> Posiciones actualizadas en tiempo real de acuerdo a los resultados reales del torneo.
                           </p>
                         </div>
-                        <button
-                          onClick={resetResults}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-xs font-bold transition-colors border border-red-500/30"
-                        >
-                          <Trash2 size={14} /> Reiniciar
-                        </button>
                       </div>
                     </div>
 
@@ -709,60 +695,28 @@ function App() {
                         <div key={groupId} className="space-y-4">
                           <StandingsTable groupName={`Grupo ${groupId}`} standings={standings[groupId]} />
                           <div className="bg-slate-800/40 rounded-xl p-3 border border-white/5 backdrop-blur-sm">
-                            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex justify-between items-center px-1">
-                              Simular partidos
-                              <button
-                                onClick={() => setSelectedGroupId(selectedGroupId === groupId ? null : groupId)}
-                                className={`text-[11px] font-bold transition-colors ${selectedGroupId === groupId ? 'text-red-400' : 'text-blue-400'}`}
-                              >
-                                {selectedGroupId === groupId ? 'Cerrar' : 'Editar resultados'}
-                              </button>
+                            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 px-1">
+                              Partidos del Grupo
                             </h4>
-
-                            <AnimatePresence>
-                              {selectedGroupId === groupId && (
-                                <motion.div
-                                  initial={{ height: 0, opacity: 0 }}
-                                  animate={{ height: 'auto', opacity: 1 }}
-                                  exit={{ height: 0, opacity: 0 }}
-                                  className="space-y-2 overflow-hidden"
-                                >
-                                  {groupMatches.filter(match => match.groupId === groupId).map(match => (
-                                    <div key={match.id} className="flex items-center justify-between bg-slate-900/40 p-2 rounded-lg border border-white/5 hover:border-blue-500/30 transition-colors">
-                                      <div className="flex items-center gap-2 w-[40%] min-w-0">
-                                        <Flag code={match.homeTeam.code} size={20} />
-                                        <span className="text-xs truncate font-medium text-slate-300">{match.homeTeam.name}</span>
-                                      </div>
-                                      <div className="flex items-center gap-1">
-                                        <input
-                                          type="number"
-                                          min="0"
-                                          value={match.homeScore === null ? '' : match.homeScore}
-                                          onChange={(event) => updateMatchScore(match.id, 'home', parseScoreInput(event.target.value))}
-                                          className="w-8 h-8 bg-slate-800 border border-slate-700 text-center rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all font-bold"
-                                        />
-                                        <span className="text-slate-600 text-xs">-</span>
-                                        <input
-                                          type="number"
-                                          min="0"
-                                          value={match.awayScore === null ? '' : match.awayScore}
-                                          onChange={(event) => updateMatchScore(match.id, 'away', parseScoreInput(event.target.value))}
-                                          className="w-8 h-8 bg-slate-800 border border-slate-700 text-center rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all font-bold"
-                                        />
-                                      </div>
-                                      <div className="flex items-center gap-2 w-[40%] justify-end min-w-0">
-                                        <span className="text-xs truncate font-medium text-slate-300">{match.awayTeam.name}</span>
-                                        <Flag code={match.awayTeam.code} size={20} />
-                                      </div>
-                                    </div>
-                                  ))}
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-
-                            {!selectedGroupId && (
-                              <p className="text-[10px] text-center text-slate-600 italic">Haz clic en editar para simular resultados</p>
-                            )}
+                            <div className="space-y-2">
+                              {groupMatches.filter(match => match.groupId === groupId).map(match => (
+                                <div key={match.id} className="flex items-center justify-between bg-slate-900/40 p-2 rounded-lg border border-white/5">
+                                  <div className="flex items-center gap-2 w-[40%] min-w-0">
+                                    <Flag code={match.homeTeam.code} size={20} />
+                                    <span className="text-xs truncate font-medium text-slate-300">{match.homeTeam.name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 font-bold text-emerald-400 text-sm">
+                                    <span>{match.homeScore === null ? '-' : match.homeScore}</span>
+                                    <span className="text-slate-600 font-normal">-</span>
+                                    <span>{match.awayScore === null ? '-' : match.awayScore}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 w-[40%] justify-end min-w-0">
+                                    <span className="text-xs truncate font-medium text-slate-300">{match.awayTeam.name}</span>
+                                    <Flag code={match.awayTeam.code} size={20} />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -772,32 +726,11 @@ function App() {
 
                 {activeTab === 'bracket' && (
                   <div className="space-y-6">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                      <div className="p-4 bg-amber-950/40 border border-amber-500/20 text-amber-300 rounded-xl flex gap-3 text-sm flex-1">
-                        <Swords className="shrink-0 mt-0.5" size={20} />
-                        <p>
-                          <strong>Fase eliminatoria:</strong> cruces dinamicos basados en tus resultados de grupos.
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-                          <div className={`w-2 h-2 rounded-full ${liveMode ? 'bg-red-500 animate-pulse' : 'bg-slate-500'}`} />
-                          <span className="text-xs font-bold text-slate-300">MODO REAL</span>
-                          <button
-                            onClick={() => setLiveMode(!liveMode)}
-                            className={`ml-2 w-8 h-4 rounded-full transition-colors relative ${liveMode ? 'bg-red-500' : 'bg-slate-600'}`}
-                          >
-                            <div className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${liveMode ? 'translate-x-4' : ''}`} />
-                          </button>
-                        </div>
-                        <button
-                          onClick={clearYellowCards}
-                          className="px-4 py-3 md:py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors whitespace-nowrap"
-                        >
-                          <RefreshCcw size={16} className="text-amber-400" />
-                          Limpiar amarillas
-                        </button>
-                      </div>
+                    <div className="p-4 bg-amber-950/40 border border-amber-500/20 text-amber-300 rounded-xl flex gap-3 text-sm w-full">
+                      <Swords className="shrink-0 mt-0.5" size={20} />
+                      <p>
+                        <strong>Fase eliminatoria (Dieciseisavos R32):</strong> Cruces y clasificados generados de forma progresiva a medida que finalizan oficialmente los grupos.
+                      </p>
                     </div>
 
                     <div className="flex overflow-x-auto pb-8 gap-12 snap-x snap-mandatory hide-scrollbar relative items-center">
@@ -829,10 +762,8 @@ function App() {
 
                 {activeTab === 'stats' && (
                   <TeamStatsTab
-                    teams={teams}
+                    teams={enrichedTeams}
                     standings={standings}
-                    onAddYellowCard={addYellowCard}
-                    onAddRedCard={addRedCard}
                   />
                 )}
 
@@ -857,7 +788,7 @@ function App() {
         </AnimatePresence>
       </main>
 
-      <MatchDetailModal match={selectedMatchForModal} teams={teams} onClose={() => setSelectedMatchForModal(null)} />
+      <MatchDetailModal match={selectedMatchForModal} teams={enrichedTeams} onClose={() => setSelectedMatchForModal(null)} />
 
       <footer className="border-t border-white/5 py-10 text-center">
         <p className="brand-title text-sm md:text-base font-black tracking-normal bg-clip-text text-transparent bg-gradient-to-r from-sky-300 via-cyan-300 to-emerald-300">

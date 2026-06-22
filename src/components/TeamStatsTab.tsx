@@ -7,8 +7,6 @@ import { AlertTriangle, Globe } from 'lucide-react';
 interface TeamStatsTabProps {
   teams: Team[];
   standings: Record<string, Standing[]>;
-  onAddYellowCard: (playerId: string) => void;
-  onAddRedCard: (playerId: string) => void;
 }
 
 const CONFEDERATIONS = ['CONMEBOL', 'CONCACAF', 'UEFA', 'CAF', 'AFC', 'OFC'];
@@ -16,8 +14,6 @@ const CONFEDERATIONS = ['CONMEBOL', 'CONCACAF', 'UEFA', 'CAF', 'AFC', 'OFC'];
 export const TeamStatsTab: React.FC<TeamStatsTabProps> = ({
   teams,
   standings,
-  onAddYellowCard,
-  onAddRedCard,
 }) => {
   const playersInDanger = useMemo(() => {
     const inDanger: { player: Player; teamName: string }[] = [];
@@ -53,8 +49,38 @@ export const TeamStatsTab: React.FC<TeamStatsTabProps> = ({
     return map;
   }, [standings]);
 
+  const cardTotals = useMemo(() => {
+    return teams.reduce(
+      (totals, team) => {
+        team.players?.forEach(player => {
+          totals.yellow += player.yellowCards;
+          totals.red += player.redCards;
+        });
+        return totals;
+      },
+      { yellow: 0, red: 0 },
+    );
+  }, [teams]);
+
   return (
     <div className="space-y-8">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-slate-900/50 border border-yellow-500/20 rounded-xl p-4">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Amarillas</div>
+          <div className="mt-2 flex items-center gap-3">
+            <span className="w-4 h-6 bg-yellow-400/90 rounded-sm shadow-[0_0_10px_rgba(250,204,21,0.25)]" />
+            <span className="text-2xl font-black text-yellow-300">{cardTotals.yellow}</span>
+          </div>
+        </div>
+        <div className="bg-slate-900/50 border border-red-500/20 rounded-xl p-4">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Rojas</div>
+          <div className="mt-2 flex items-center gap-3">
+            <span className="w-4 h-6 bg-red-500/90 rounded-sm shadow-[0_0_10px_rgba(239,68,68,0.25)]" />
+            <span className="text-2xl font-black text-red-400">{cardTotals.red}</span>
+          </div>
+        </div>
+      </div>
+
       {suspendedPlayers.length > 0 && (
         <div className="bg-rose-950/20 border border-rose-500/30 rounded-xl p-5 shadow-lg shadow-rose-500/5">
           <div className="flex items-center gap-3 mb-4">
@@ -122,8 +148,6 @@ export const TeamStatsTab: React.FC<TeamStatsTabProps> = ({
                     key={team.code}
                     team={team}
                     standing={flatStandings.get(team.name)}
-                    onAddYellowCard={onAddYellowCard}
-                    onAddRedCard={onAddRedCard}
                   />
                 ))}
               </div>

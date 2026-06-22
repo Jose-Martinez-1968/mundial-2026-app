@@ -8,17 +8,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface TeamProfileProps {
   team: Team;
   standing?: Standing;
-  onAddYellowCard: (playerId: string) => void;
-  onAddRedCard: (playerId: string) => void;
 }
 
 export const TeamProfile: React.FC<TeamProfileProps> = ({
   team,
   standing,
-  onAddYellowCard,
-  onAddRedCard,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const teamYellowCards = team.players?.reduce((sum, p) => sum + p.yellowCards, 0) || 0;
+  const teamRedCards = team.players?.reduce((sum, p) => sum + p.redCards, 0) || 0;
 
   return (
     <div className="bg-slate-800/40 border border-white/5 rounded-xl overflow-hidden transition-all duration-300 hover:border-emerald-500/30">
@@ -30,7 +29,7 @@ export const TeamProfile: React.FC<TeamProfileProps> = ({
           <Flag code={team.code} size={48} className="rounded-md" />
           <div>
             <h3 className="font-bold text-lg text-slate-100">{team.name}</h3>
-            <div className="flex gap-3 text-xs text-slate-400 mt-1">
+            <div className="flex flex-wrap gap-3 text-xs text-slate-400 mt-1">
               <span className="bg-slate-800 px-2 py-0.5 rounded border border-white/5">{team.continent}</span>
               {standing && (
                 <>
@@ -39,6 +38,13 @@ export const TeamProfile: React.FC<TeamProfileProps> = ({
                   <span title="Puntos">Pts: {standing.points}</span>
                 </>
               )}
+              {/* Team Cards badge */}
+              <div className="flex items-center gap-1.5 ml-1 border-l border-white/10 pl-2">
+                <span className="w-2.5 h-3.5 bg-yellow-400/80 rounded-sm inline-block shadow-[0_0_4px_rgba(250,204,21,0.3)]" title="Tarjetas amarillas acumuladas del equipo" />
+                <span className="font-bold text-slate-300">{teamYellowCards}</span>
+                <span className="w-2.5 h-3.5 bg-red-500/80 rounded-sm inline-block ml-1 shadow-[0_0_4px_rgba(239,68,68,0.3)]" title="Tarjetas rojas acumuladas del equipo" />
+                <span className="font-bold text-slate-300">{teamRedCards}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -60,17 +66,19 @@ export const TeamProfile: React.FC<TeamProfileProps> = ({
             className="overflow-hidden"
           >
             <div className="p-4 border-t border-white/5 bg-slate-900/30">
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Plantel (26 jugadores)</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {team.players?.map(player => (
-                  <PlayerRow
-                    key={player.id}
-                    player={player}
-                    onAddYellowCard={onAddYellowCard}
-                    onAddRedCard={onAddRedCard}
-                  />
-                ))}
-              </div>
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Jugadores con tarjetas reales</h4>
+              {team.players && team.players.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {team.players.map(player => (
+                    <PlayerRow
+                      key={player.id}
+                      player={player}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">Sin tarjetas registradas en el feed oficial.</p>
+              )}
             </div>
           </motion.div>
         )}

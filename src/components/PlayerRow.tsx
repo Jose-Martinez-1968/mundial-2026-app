@@ -4,15 +4,9 @@ import { isPlayerInDanger, isPlayerSuspended } from '../modules/simulator/Discip
 
 interface PlayerRowProps {
   player: Player;
-  onAddYellowCard: (playerId: string) => void;
-  onAddRedCard: (playerId: string) => void;
 }
 
-export const PlayerRow: React.FC<PlayerRowProps> = ({
-  player,
-  onAddYellowCard,
-  onAddRedCard,
-}) => {
+export const PlayerRow: React.FC<PlayerRowProps> = ({ player }) => {
   const suspended = isPlayerSuspended(player);
   const inDanger = isPlayerInDanger(player);
 
@@ -48,23 +42,27 @@ export const PlayerRow: React.FC<PlayerRowProps> = ({
         )}
 
         <div className="flex gap-2">
-          <button
-            onClick={() => onAddYellowCard(player.id)}
-            disabled={suspended}
-            className="flex items-center justify-center w-7 h-9 bg-yellow-400/20 border border-yellow-500/50 rounded cursor-pointer hover:bg-yellow-400/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Añadir tarjeta amarilla"
+          <div
+            className={`flex items-center justify-center w-7 h-9 rounded border transition-all duration-200 ${
+              player.yellowCards > 0
+                ? 'bg-yellow-400/20 border-yellow-500/50 text-yellow-400 font-extrabold shadow-[0_0_8px_rgba(250,204,21,0.2)]'
+                : 'bg-slate-800/20 border-slate-700/50 text-slate-500'
+            }`}
+            title={`${player.yellowCards} Tarjetas Amarillas`}
           >
-            <span className="text-xs font-bold text-yellow-500">{player.yellowCards}</span>
-          </button>
+            <span className="text-xs font-bold">{player.yellowCards}</span>
+          </div>
 
-          <button
-            onClick={() => onAddRedCard(player.id)}
-            disabled={suspended}
-            className="flex items-center justify-center w-7 h-9 bg-red-500/20 border border-red-600/50 rounded cursor-pointer hover:bg-red-500/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Añadir tarjeta roja"
+          <div
+            className={`flex items-center justify-center w-7 h-9 rounded border transition-all duration-200 ${
+              player.redCards > 0
+                ? 'bg-red-500/20 border-red-600/50 text-red-500 font-extrabold shadow-[0_0_8px_rgba(239,68,68,0.2)]'
+                : 'bg-slate-800/20 border-slate-700/50 text-slate-500'
+            }`}
+            title={`${player.redCards} Tarjetas Rojas`}
           >
-            <span className="text-xs font-bold text-red-500">{player.redCards}</span>
-          </button>
+            <span className="text-xs font-bold">{player.redCards}</span>
+          </div>
         </div>
       </div>
     </div>

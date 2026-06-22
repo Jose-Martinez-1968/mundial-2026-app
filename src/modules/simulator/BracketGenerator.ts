@@ -4,15 +4,10 @@ import {
   calculateNextRoundFromMatches,
   calculateRoundOf32FromStandings,
   calculateStandingsForGroups,
-  createInitialGroupMatches,
   getBestThirdPlacedTeams,
 } from './TournamentCore';
 
 export type { GroupMatch, KnockoutMatch, Standing };
-
-export const generateInitialGroupMatches = (): GroupMatch[] => {
-  return createInitialGroupMatches(fifaData.groups as Group[]);
-};
 
 export const calculateStandings = (matches: GroupMatch[], teamsData: Team[] = []): Record<string, Standing[]> => {
   return calculateStandingsForGroups(fifaData.groups as Group[], matches, teamsData);
