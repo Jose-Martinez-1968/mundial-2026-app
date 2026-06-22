@@ -161,7 +161,7 @@ function App() {
     try {
       const cached = localStorage.getItem('wc2026_cached_matches');
       if (cached) {
-        const parsed = JSON.parse(cached);
+        const parsed = JSON.parse(cached) as unknown;
         return validateMatches(parsed);
       }
     } catch (e) {

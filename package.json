@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "update:data": "node backend/scraper.js",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "tsc -p tsconfig.tests.json && node --test tests/**/*.test.js",

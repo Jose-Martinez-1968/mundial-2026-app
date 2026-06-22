@@ -1,294 +1,204 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const TARGET_DIR = path.join(__dirname, '../public/data');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const TARGET_DIR = path.join(__dirname, '..', 'public', 'data');
 const TARGET_FILE = path.join(TARGET_DIR, 'matches.json');
 
-const rawMatches = [
-  // June 11 — Grupo A
-  // México 2-0 Sudáfrica (confirmado FIFA/TYC)
-  {
-    matchId: 'M001',
-    groupId: 'A',
-    team1: { name: 'Mexico', code: 'MEX', score: 2 },
-    team2: { name: 'South Africa', code: 'RSA', score: 0 },
-    status: 'FINISHED',
-    utcDateString: '2026-06-11T19:00:00.000Z',
-    venue: 'Estadio Azteca',
-    venueTimeZone: 'America/Mexico_City',
-    isOpening: true,
-    bookings: [
-      { playerName: 'Edson Álvarez', card: 'yellow', teamCode: 'MEX', teamName: 'Mexico' },
-      { playerName: 'Thabo Cele', card: 'yellow', teamCode: 'RSA', teamName: 'South Africa' }
-    ]
-  },
-  // Corea del Sur 2-1 República Checa (confirmado FIFA/TYC)
-  {
-    matchId: 'M002',
-    groupId: 'A',
-    team1: { name: 'South Korea', code: 'KOR', score: 2 },
-    team2: { name: 'Czechia', code: 'CZE', score: 1 },
-    status: 'FINISHED',
-    utcDateString: '2026-06-11T22:00:00.000Z',
-    venue: 'Estadio Akron, Guadalajara',
-    venueTimeZone: 'America/Mexico_City',
-    isOpening: false,
-    bookings: [
-      { playerName: 'Lee Jae-sung', card: 'yellow', teamCode: 'KOR', teamName: 'South Korea' },
-      { playerName: 'Vladimír Coufal', card: 'yellow', teamCode: 'CZE', teamName: 'Czechia' }
-    ]
-  },
-  // June 12 — Grupo B y D
-  // Canadá 1-1 Bosnia y Herzegovina (confirmado FIFA/TYC)
-  {
-    matchId: 'M003',
-    groupId: 'B',
-    team1: { name: 'Canada', code: 'CAN', score: 1 },
-    team2: { name: 'Bosnia and Herzegovina', code: 'BIH', score: 1 },
-    status: 'FINISHED',
-    utcDateString: '2026-06-12T19:00:00.000Z',
-    venue: 'BMO Field, Toronto',
-    venueTimeZone: 'America/Toronto',
-    isOpening: false,
-    bookings: [
-      { playerName: 'Ismaël Koné', card: 'yellow', teamCode: 'CAN', teamName: 'Canada' },
-      { playerName: 'Edin Džeko', card: 'yellow', teamCode: 'BIH', teamName: 'Bosnia and Herzegovina' }
-    ]
-  },
-  // USA 4-1 Paraguay (confirmado FIFA/TYC)
-  {
-    matchId: 'M004',
-    groupId: 'D',
-    team1: { name: 'USA', code: 'USA', score: 4 },
-    team2: { name: 'Paraguay', code: 'PAR', score: 1 },
-    status: 'FINISHED',
-    utcDateString: '2026-06-12T22:00:00.000Z',
-    venue: 'SoFi Stadium, Los Ángeles',
-    venueTimeZone: 'America/Los_Angeles',
-    isOpening: false,
-    bookings: [
-      { playerName: 'Christian Pulisic', card: 'yellow', teamCode: 'USA', teamName: 'USA' },
-      { playerName: 'Gustavo Gómez', card: 'yellow', teamCode: 'PAR', teamName: 'Paraguay' }
-    ]
-  },
+const FIFA_API = 'https://api.fifa.com/api/v3';
+const SEASON_ID = '285023';
+const COMPETITION_ID = '17';
+const LANGUAGE = 'en';
 
-  // June 13 matches
-  {
-    matchId: 'M005',
-    groupId: 'C',
-    team1: { name: 'Haiti', code: 'HAI', score: 0 },
-    team2: { name: 'Scotland', code: 'SCO', score: 1 },
-    status: 'FINISHED',
-    utcDateString: '2026-06-13T16:00:00.000Z',
-    venue: 'Gillette Stadium, Boston',
-    venueTimeZone: 'America/New_York',
-    isOpening: false,
-    bookings: [
-      { playerName: 'Orelien Dieu', card: 'yellow', teamCode: 'HAI', teamName: 'Haiti' },
-      { playerName: 'John McGinn', card: 'yellow', teamCode: 'SCO', teamName: 'Scotland' }
-    ]
-  },
-  // Australia 2-0 Türkiye (confirmado FIFA/TYC)
-  {
-    matchId: 'M006',
-    groupId: 'D',
-    team1: { name: 'Australia', code: 'AUS', score: 2 },
-    team2: { name: 'Türkiye', code: 'TUR', score: 0 },
-    status: 'FINISHED',
-    utcDateString: '2026-06-13T19:00:00.000Z',
-    venue: 'BC Place, Vancouver',
-    venueTimeZone: 'America/Vancouver',
-    isOpening: false,
-    bookings: [
-      { playerName: 'Merih Demiral', card: 'yellow', teamCode: 'TUR', teamName: 'Türkiye' },
-      { playerName: 'Çağlar Söyüncü', card: 'yellow', teamCode: 'TUR', teamName: 'Türkiye' }
-    ]
-  },
-  // Brasil 1-1 Marruecos (confirmado FIFA/AS.com)
-  {
-    matchId: 'M007',
-    groupId: 'C',
-    team1: { name: 'Brazil', code: 'BRA', score: 1 },
-    team2: { name: 'Morocco', code: 'MAR', score: 1 },
-    status: 'FINISHED',
-    utcDateString: '2026-06-13T22:00:00.000Z',
-    venue: 'MetLife Stadium, New York/New Jersey',
-    venueTimeZone: 'America/New_York',
-    isOpening: false,
-    bookings: [
-      { playerName: 'Marquinhos', card: 'yellow', teamCode: 'BRA', teamName: 'Brazil' },
-      { playerName: 'Sofyan Amrabat', card: 'yellow', teamCode: 'MAR', teamName: 'Morocco' }
-    ]
-  },
-  // Qatar 1-1 Suiza (confirmado FIFA/TYC)
-  {
-    matchId: 'M008',
-    groupId: 'B',
-    team1: { name: 'Qatar', code: 'QAT', score: 1 },
-    team2: { name: 'Switzerland', code: 'SUI', score: 1 },
-    status: 'FINISHED',
-    utcDateString: '2026-06-13T23:30:00.000Z',
-    venue: "Levi's Stadium, San Francisco",
-    venueTimeZone: 'America/Los_Angeles',
-    isOpening: false,
-    bookings: [
-      { playerName: 'Bassam Al-Rawi', card: 'yellow', teamCode: 'QAT', teamName: 'Qatar' },
-      { playerName: 'Granit Xhaka', card: 'yellow', teamCode: 'SUI', teamName: 'Switzerland' }
-    ]
-  },
-  // June 14 — Grupos E y F
-  // Costa de Marfil 1-0 Ecuador (confirmado FIFA/TYC)
-  {
-    matchId: 'M009',
-    groupId: 'E',
-    team1: { name: 'Ivory Coast', code: 'CIV', score: 1 },
-    team2: { name: 'Ecuador', code: 'ECU', score: 0 },
-    status: 'FINISHED',
-    utcDateString: '2026-06-14T16:00:00.000Z',
-    venue: 'Lincoln Financial Field, Filadelfia',
-    venueTimeZone: 'America/New_York',
-    isOpening: false,
-    bookings: [
-      { playerName: 'Sébastien Haller', card: 'yellow', teamCode: 'CIV', teamName: 'Ivory Coast' },
-      { playerName: 'Moisés Caicedo', card: 'yellow', teamCode: 'ECU', teamName: 'Ecuador' }
-    ]
-  },
-  // Alemania 7-1 Curaçao (confirmado FIFA/bolavip)
-  {
-    matchId: 'M010',
-    groupId: 'E',
-    team1: { name: 'Germany', code: 'GER', score: 7 },
-    team2: { name: 'Curaçao', code: 'CUW', score: 1 },
-    status: 'FINISHED',
-    utcDateString: '2026-06-14T19:00:00.000Z',
-    venue: 'NRG Stadium, Houston',
-    venueTimeZone: 'America/Chicago',
-    isOpening: false,
-    bookings: [
-      { playerName: 'Leroy Sané', card: 'yellow', teamCode: 'GER', teamName: 'Germany' }
-    ]
-  },
-  // Países Bajos 2-2 Japón (confirmado FIFA/AS.com)
-  {
-    matchId: 'M011',
-    groupId: 'F',
-    team1: { name: 'Netherlands', code: 'NED', score: 2 },
-    team2: { name: 'Japan', code: 'JPN', score: 2 },
-    status: 'FINISHED',
-    utcDateString: '2026-06-14T22:00:00.000Z',
-    venue: 'AT&T Stadium, Dallas',
-    venueTimeZone: 'America/Chicago',
-    isOpening: false,
-    bookings: [
-      { playerName: 'Virgil van Dijk', card: 'yellow', teamCode: 'NED', teamName: 'Netherlands' },
-      { playerName: 'Wataru Endo', card: 'yellow', teamCode: 'JPN', teamName: 'Japan' }
-    ]
-  },
-  // Suecia 5-1 Túnez (confirmado FIFA/Flashscore)
-  {
-    matchId: 'M012',
-    groupId: 'F',
-    team1: { name: 'Sweden', code: 'SWE', score: 5 },
-    team2: { name: 'Tunisia', code: 'TUN', score: 1 },
-    status: 'FINISHED',
-    utcDateString: '2026-06-14T23:30:00.000Z',
-    venue: 'Estadio BBVA, Monterrey',
-    venueTimeZone: 'America/Monterrey',
-    isOpening: false,
-    bookings: [
-      { playerName: 'Hamza Rafia', card: 'yellow', teamCode: 'TUN', teamName: 'Tunisia' },
-      { playerName: 'Ellyes Skhiri', card: 'yellow', teamCode: 'TUN', teamName: 'Tunisia' }
-    ]
-  },
+const TIMEZONES_BY_STADIUM = new Map([
+  ['Mexico City Stadium', 'America/Mexico_City'],
+  ['Guadalajara Stadium', 'America/Mexico_City'],
+  ['Monterrey Stadium', 'America/Monterrey'],
+  ['Toronto Stadium', 'America/Toronto'],
+  ['Vancouver Stadium', 'America/Vancouver'],
+  ['BC Place Vancouver', 'America/Vancouver'],
+  ['Los Angeles Stadium', 'America/Los_Angeles'],
+  ['San Francisco Bay Area Stadium', 'America/Los_Angeles'],
+  ['Seattle Stadium', 'America/Los_Angeles'],
+  ['Dallas Stadium', 'America/Chicago'],
+  ['Houston Stadium', 'America/Chicago'],
+  ['Kansas City Stadium', 'America/Chicago'],
+  ['Atlanta Stadium', 'America/New_York'],
+  ['Boston Stadium', 'America/New_York'],
+  ['Miami Stadium', 'America/New_York'],
+  ['New York/New Jersey Stadium', 'America/New_York'],
+  ['Philadelphia Stadium', 'America/New_York'],
+]);
 
-  // June 15 — Grupos G y H (hoy, programados)
-  // Bélgica vs. Egipto — Lumen Field, Seattle — 19:00 UTC (FIFA)
-  {
-    matchId: 'M013',
-    groupId: 'G',
-    team1: { name: 'Belgium', code: 'BEL', score: null },
-    team2: { name: 'Egypt', code: 'EGY', score: null },
-    status: 'SCHEDULED',
-    utcDateString: '2026-06-15T19:00:00.000Z',
-    venue: 'Lumen Field, Seattle',
-    venueTimeZone: 'America/Los_Angeles',
-    isOpening: false,
-    bookings: []
-  },
-  // Irán vs. Nueva Zelanda — SoFi Stadium, LA — 06:00 UTC 16 Jun (FIFA)
-  {
-    matchId: 'M014',
-    groupId: 'G',
-    team1: { name: 'Iran', code: 'IRN', score: null },
-    team2: { name: 'New Zealand', code: 'NZL', score: null },
-    status: 'SCHEDULED',
-    utcDateString: '2026-06-16T06:00:00.000Z',
-    venue: 'SoFi Stadium, Los Ángeles',
-    venueTimeZone: 'America/Los_Angeles',
-    isOpening: false,
-    bookings: []
-  },
-  // España vs. Cabo Verde — AT&T Stadium, Dallas — 16:00 UTC (FIFA)
-  {
-    matchId: 'M015',
-    groupId: 'H',
-    team1: { name: 'Spain', code: 'ESP', score: null },
-    team2: { name: 'Cabo Verde', code: 'CPV', score: null },
-    status: 'SCHEDULED',
-    utcDateString: '2026-06-15T16:00:00.000Z',
-    venue: 'AT&T Stadium, Dallas',
-    venueTimeZone: 'America/Chicago',
-    isOpening: false,
-    bookings: []
-  },
-  // Arabia Saudita vs. Uruguay — Hard Rock Stadium, Miami — 23:00 UTC (FIFA)
-  {
-    matchId: 'M016',
-    groupId: 'H',
-    team1: { name: 'Saudi Arabia', code: 'KSA', score: null },
-    team2: { name: 'Uruguay', code: 'URU', score: null },
-    status: 'SCHEDULED',
-    utcDateString: '2026-06-15T23:00:00.000Z',
-    venue: 'Hard Rock Stadium, Miami',
-    venueTimeZone: 'America/New_York',
-    isOpening: false,
-    bookings: []
-  }
-];
+const getLocalized = (items, fallback = '') => {
+  if (!Array.isArray(items)) return fallback;
+  return items.find(item => item.Locale === 'en-GB')?.Description || items[0]?.Description || fallback;
+};
 
-
-function writeSchedule() {
-  const matches = rawMatches.map(m => {
-    const officialDate = m.utcDateString.slice(0, 10);
-    return {
-      matchId: m.matchId,
-      stage: `Fase de Grupos (Grupo ${m.groupId})`,
-      groupId: m.groupId,
-      team1: m.team1,
-      team2: m.team2,
-      status: m.status,
-      officialDate,
-      utcDateString: m.utcDateString,
-      venue: m.venue,
-      stadium: m.venue,
-      venueTimeZone: m.venueTimeZone,
-      isOpening: m.isOpening || false,
-      kickoffStatus: 'confirmed',
-      source: 'official-schedule',
-      bookings: m.bookings || [],
-      winnerCode: m.winnerCode
-    };
+const fetchJson = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      accept: 'application/json',
+      'user-agent': 'mundial-2026-app-data-sync/1.0',
+    },
   });
 
-  if (!fs.existsSync(TARGET_DIR)) {
-    fs.mkdirSync(TARGET_DIR, { recursive: true });
+  if (!response.ok) {
+    throw new Error(`FIFA API ${response.status}: ${url}`);
   }
 
-  fs.writeFileSync(TARGET_FILE, `${JSON.stringify(matches, null, 2)}\n`, 'utf8');
-  console.log(`Calendario real escrito: ${matches.length} partidos.`);
-}
+  return response.json();
+};
 
-writeSchedule();
+const fifaMatchesUrl = () => {
+  const params = new URLSearchParams({
+    language: LANGUAGE,
+    count: '500',
+    idCompetition: COMPETITION_ID,
+    idSeason: SEASON_ID,
+  });
+  return `${FIFA_API}/calendar/matches?${params.toString()}`;
+};
+
+const fifaTimelineUrl = (idMatch) => {
+  const params = new URLSearchParams({ language: LANGUAGE });
+  return `${FIFA_API}/timelines/${idMatch}?${params.toString()}`;
+};
+
+const toStatus = (match) => {
+  if (match.MatchStatus === 0) return 'FINISHED';
+  if (match.MatchStatus === 2 || match.MatchStatus === 3 || match.MatchStatus === 12) return 'LIVE';
+  if (match.MatchStatus === 4) return 'POSTPONED';
+  if (match.MatchStatus === 5) return 'CANCELLED';
+  return 'SCHEDULED';
+};
+
+const toStage = (match) => {
+  const stage = getLocalized(match.StageName, 'Partido');
+  const group = getLocalized(match.GroupName);
+  if (stage === 'First Stage' && group) return `Fase de Grupos (${group.replace('Group ', 'Grupo ')})`;
+  return stage;
+};
+
+const toGroupId = (match) => {
+  const group = getLocalized(match.GroupName);
+  const found = group.match(/Group\s+([A-Z])/i);
+  return found?.[1].toUpperCase();
+};
+
+const toTeam = (team, placeholder, score) => {
+  if (!team) {
+    return {
+      name: placeholder || 'TBD',
+      score,
+    };
+  }
+
+  return {
+    name: getLocalized(team.TeamName, team.ShortClubName || team.Abbreviation || 'TBD'),
+    code: team.Abbreviation || team.IdCountry || undefined,
+    score,
+  };
+};
+
+const getPlayerName = (event) => {
+  const description = getLocalized(event.EventDescription);
+  const match = description.match(/^(.+?)\s+\((.+?)\)\s+(?:is booked|is sent off)/i);
+  if (match) return match[1].replace(/\s+/g, ' ').trim();
+  return event.IdPlayer ? `Player ${event.IdPlayer}` : 'Jugador sin nombre';
+};
+
+const extractBookings = async (match) => {
+  if (toStatus(match) === 'SCHEDULED') return [];
+
+  try {
+    const timeline = await fetchJson(fifaTimelineUrl(match.IdMatch));
+    const teamsById = new Map(
+      [match.Home, match.Away]
+        .filter(Boolean)
+        .map(team => [
+          team.IdTeam,
+          {
+            code: team.Abbreviation || team.IdCountry,
+            name: getLocalized(team.TeamName, team.ShortClubName || team.Abbreviation),
+          },
+        ]),
+    );
+
+    return (timeline.Event || [])
+      .filter(event => event.Type === 2 || event.Type === 3)
+      .map(event => {
+        const team = teamsById.get(event.IdTeam) || {};
+        return {
+          playerName: getPlayerName(event),
+          card: event.Type === 2 ? 'yellow' : 'red',
+          ...(team.code ? { teamCode: team.code } : {}),
+          ...(team.name ? { teamName: team.name } : {}),
+        };
+      });
+  } catch (error) {
+    console.warn(`No se pudo leer timeline de ${match.IdMatch}: ${error.message}`);
+    return [];
+  }
+};
+
+const toMatchDto = async (match) => {
+  const status = toStatus(match);
+  const stadiumName = getLocalized(match.Stadium?.Name, 'Estadio pendiente');
+  const utcDateString = match.TimeDefined ? match.Date : undefined;
+  const officialDate = (match.Date || match.LocalDate || '').slice(0, 10);
+  const homeScore = status === 'SCHEDULED' ? null : match.HomeTeamScore;
+  const awayScore = status === 'SCHEDULED' ? null : match.AwayTeamScore;
+  const matchNumber = String(match.MatchNumber).padStart(3, '0');
+
+  return {
+    matchId: `M${matchNumber}`,
+    fifaMatchId: match.IdMatch,
+    stage: toStage(match),
+    ...(toGroupId(match) ? { groupId: toGroupId(match) } : {}),
+    team1: toTeam(match.Home, match.PlaceHolderA, homeScore),
+    team2: toTeam(match.Away, match.PlaceHolderB, awayScore),
+    status,
+    ...(utcDateString ? { utcDateString } : {}),
+    officialDate,
+    venue: stadiumName,
+    stadium: stadiumName,
+    venueTimeZone: TIMEZONES_BY_STADIUM.get(stadiumName) || 'UTC',
+    ...(match.MatchNumber === 1 ? { isOpening: true } : {}),
+    ...(match.MatchNumber === 104 ? { isFinal: true } : {}),
+    kickoffStatus: match.TimeDefined ? 'confirmed' : 'date-only',
+    source: status === 'SCHEDULED' ? 'official-schedule' : 'official-api',
+    ...(match.Winner ? { winnerCode: match.Winner === match.Home?.IdTeam ? match.Home?.Abbreviation : match.Away?.Abbreviation } : {}),
+    bookings: await extractBookings(match),
+  };
+};
+
+const main = async () => {
+  const data = await fetchJson(fifaMatchesUrl());
+  const sourceMatches = data.Results || [];
+  if (sourceMatches.length !== 104) {
+    throw new Error(`FIFA API devolvio ${sourceMatches.length} partidos; se esperaban 104.`);
+  }
+
+  const matches = [];
+  for (const match of sourceMatches.sort((a, b) => a.MatchNumber - b.MatchNumber)) {
+    matches.push(await toMatchDto(match));
+  }
+
+  fs.mkdirSync(TARGET_DIR, { recursive: true });
+  fs.writeFileSync(TARGET_FILE, `${JSON.stringify(matches, null, 2)}\n`, 'utf8');
+
+  const finished = matches.filter(match => match.status === 'FINISHED').length;
+  const yellowCards = matches.flatMap(match => match.bookings).filter(card => card.card === 'yellow').length;
+  const redCards = matches.flatMap(match => match.bookings).filter(card => card.card === 'red').length;
+
+  console.log(`Calendario oficial FIFA escrito: ${matches.length} partidos.`);
+  console.log(`Finalizados: ${finished}. Amarillas: ${yellowCards}. Rojas: ${redCards}.`);
+  console.log(`Fuente: ${fifaMatchesUrl()}`);
+};
+
+main().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});

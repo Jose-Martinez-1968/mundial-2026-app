@@ -2,7 +2,9 @@ import fifaData from '../data/fifaData.json';
 import type { Group, MatchDTO } from '../types';
 import { validateMatches } from './matchValidation';
 
-const TOURNAMENT_DATA_URL = import.meta.env.VITE_TOURNAMENT_DATA_URL || '/data/matches.json';
+const tournamentDataUrl = import.meta.env.VITE_TOURNAMENT_DATA_URL as string | undefined;
+const TOURNAMENT_DATA_URL = tournamentDataUrl || '/data/matches.json';
+const groups = (fifaData as { groups: Group[] }).groups;
 
 const withCacheBuster = (url: string): string => {
   const separator = url.includes('?') ? '&' : '?';
@@ -17,13 +19,13 @@ export const fetchTournamentData = async (): Promise<{ groups: Group[]; matches:
     const data = await response.json() as unknown;
     const matches = validateMatches(data);
     return {
-      groups: fifaData.groups as Group[],
+      groups,
       matches,
     };
   } catch (error) {
     console.error('Error cargando calendario local:', error);
     return {
-      groups: fifaData.groups as Group[],
+      groups,
       matches: [],
     };
   }
