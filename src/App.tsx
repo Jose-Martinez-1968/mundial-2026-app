@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -9,6 +9,7 @@ import {
   Globe,
   MapPin,
   MessageCircle,
+  Medal,
   RefreshCcw,
   Send,
   Swords,
@@ -20,6 +21,7 @@ import { GlobalSearch } from './components/GlobalSearch';
 import { MatchCard } from './components/MatchCard';
 import { MatchDetailModal } from './components/MatchDetailModal';
 import { StandingsTable } from './components/StandingsTable';
+import { BestThirdsTable } from './components/BestThirdsTable';
 import { TeamStatsTab } from './components/TeamStatsTab';
 import { VenueCarousel } from './components/VenueCarousel';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -38,7 +40,7 @@ import {
 } from './modules/simulator/BracketGenerator';
 import type { GroupMatch, KnockoutMatch, MatchDTO, Team, Venue } from './types';
 
-type TabId = 'matches' | 'groups' | 'bracket' | 'venues' | 'stats';
+type TabId = 'matches' | 'groups' | 'thirds' | 'bracket' | 'venues' | 'stats';
 
 type TabConfig = {
   id: TabId;
@@ -70,6 +72,7 @@ const WHATSAPP_FEEDBACK_MESSAGE = [
 const TABS: TabConfig[] = [
   { id: 'matches', label: 'Partidos', icon: <Calendar size={18} /> },
   { id: 'groups', label: 'Grupos (A-L)', icon: <ListIcon size={18} /> },
+  { id: 'thirds', label: 'Mejores Terceros', icon: <Medal size={18} /> },
   { id: 'stats', label: 'Estadisticas', icon: <Trophy size={18} /> },
   { id: 'bracket', label: 'Llaves R32', icon: <Swords size={18} /> },
   { id: 'venues', label: 'Sedes', icon: <MapPin size={18} /> },
@@ -91,6 +94,7 @@ function ListIcon({ size = 18 }: { size?: number }) {
 const TAB_STYLES: Record<TabId, string> = {
   matches: 'bg-blue-600 shadow-blue-500/20',
   groups: 'bg-emerald-600 shadow-emerald-500/20',
+  thirds: 'bg-violet-600 shadow-violet-500/20',
   stats: 'bg-cyan-600 shadow-cyan-500/20',
   bracket: 'bg-amber-600 shadow-amber-500/20',
   venues: 'bg-rose-600 shadow-rose-500/20',
@@ -172,6 +176,8 @@ function App() {
 
   const [calendarError, setCalendarError] = useState<string | null>(null);
   const [loading, setLoading] = useState(matches.length === 0);
+  // "refreshing" tracks background/manual updates without blocking the UI.
+  const [refreshing, setRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMatchForModal, setSelectedMatchForModal] = useState<KnockoutMatch | null>(null);
@@ -179,8 +185,32 @@ function App() {
   const [activeTab, setActiveTab] = useLocalStorage<TabId>('wc2026_active_tab', 'groups');
   const [notificationsEnabled, setNotificationsEnabled] = useLocalStorage<boolean>('wc2026_notifications', false);
 
-  // Fetch matches from server
+  // Refs keep the latest values without forcing fetchMatches (and therefore
+  // the realtime sync effect) to be recreated. This breaks the previous
+  // re-subscription loop: fetchMatches now has a STABLE identity.
+  const notificationsEnabledRef = useRef(notificationsEnabled);
+  const matchesRef = useRef(matches);
+  const isFirstLoadRef = useRef(matches.length === 0);
+
+  useEffect(() => {
+    notificationsEnabledRef.current = notificationsEnabled;
+  }, [notificationsEnabled]);
+
+  useEffect(() => {
+    matchesRef.current = matches;
+  }, [matches]);
+
+  // Fetch matches from server. Runs in the background (async) and never blocks
+  // the UI. The only state it toggles directly is `loading` on the very first
+  // load; subsequent refreshes only flip `refreshing`.
   const fetchMatches = useCallback(async () => {
+    const isFirstLoad = isFirstLoadRef.current;
+    if (isFirstLoad) {
+      setLoading(true);
+    } else {
+      setRefreshing(true);
+    }
+
     try {
       const { matches: nextMatches } = await fetchTournamentData();
 
@@ -188,16 +218,20 @@ function App() {
       localStorage.setItem('wc2026_cached_matches', JSON.stringify(nextMatches));
       setCalendarError(null);
       setLastUpdate(new Date().toLocaleTimeString());
-      if (notificationsEnabled) NotificationEngine.checkMatchesAndNotify(nextMatches);
+      if (notificationsEnabledRef.current) {
+        NotificationEngine.checkMatchesAndNotify(nextMatches);
+      }
     } catch (error) {
       console.error('No se pudo cargar el calendario:', error);
-      if (matches.length === 0) {
+      if (matchesRef.current.length === 0) {
         setCalendarError('No se pudo establecer conexión y no hay datos locales cargados.');
       }
     } finally {
+      isFirstLoadRef.current = false;
       setLoading(false);
+      setRefreshing(false);
     }
-  }, [notificationsEnabled, matches.length]);
+  }, []);
 
   useEffect(() => {
     if ('Notification' in window && Notification.permission === 'granted') {
@@ -431,6 +465,17 @@ function App() {
     if (granted) NotificationEngine.checkMatchesAndNotify(matches);
   };
 
+  // Manual refresh: forces a reconnect + data fetch. Shows a spinner while
+  // running. Safe to call repeatedly; overlapping calls are ignored upstream
+  // by the realtimeSync guard, and `refreshing` reflects the in-flight state.
+  const handleManualRefresh = useCallback(() => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setCalendarError('Sin conexión a internet. Reintenta cuando vuelva la señal.');
+      return;
+    }
+    void fetchMatches();
+  }, [fetchMatches]);
+
   const toggleLanguage = () => {
     void i18n.changeLanguage(i18n.language === 'es' ? 'en' : 'es');
   };
@@ -581,6 +626,16 @@ function App() {
             </div>
 
             <button
+              onClick={handleManualRefresh}
+              disabled={refreshing}
+              className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed border border-blue-400/40 rounded-lg text-sm font-bold text-white transition-all"
+              title={refreshing ? 'Actualizando…' : 'Actualizar datos de partidos y tarjetas'}
+            >
+              <RefreshCcw size={16} className={refreshing ? 'animate-spin' : ''} />
+              <span>{refreshing ? 'Actualizando…' : 'Actualizar'}</span>
+            </button>
+
+            <button
               onClick={() => { void enableNotifications(); }}
               className={`p-2 rounded-lg border transition-all ${notificationsEnabled ? 'bg-emerald-900/30 border-emerald-500/50 text-emerald-400' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-400'}`}
               title={notificationsEnabled ? 'Alertas ON' : 'Activar alertas'}
@@ -594,12 +649,18 @@ function App() {
               <Globe size={16} className="text-blue-400" />
               <span className="uppercase text-xs">{i18n.language}</span>
             </button>
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            <div className="flex items-center gap-2 text-xs text-slate-500 w-[150px] justify-end">
+              <span className="relative flex h-2 w-2 shrink-0">
+                {refreshing ? (
+                  <RefreshCcw size={12} className="animate-spin text-blue-400" />
+                ) : (
+                  <>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </>
+                )}
               </span>
-              {lastUpdate || '---'}
+              <span className="truncate text-right">{refreshing ? 'Sincronizando…' : (lastUpdate || '---')}</span>
             </div>
           </div>
         </div>
@@ -722,6 +783,10 @@ function App() {
                       ))}
                     </div>
                   </div>
+                )}
+
+                {activeTab === 'thirds' && (
+                  <BestThirdsTable standings={standings} />
                 )}
 
                 {activeTab === 'bracket' && (

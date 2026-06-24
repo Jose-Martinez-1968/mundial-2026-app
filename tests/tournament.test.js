@@ -74,7 +74,7 @@ test('head-to-head breaks a two-team tie before overall goal difference', () => 
   assert.equal(standings.A[1].code, 'B1');
 });
 
-test('getBestThirdPlacedTeams returns 8 teams', () => {
+test('getBestThirdPlacedTeams returns all 12 third-placed teams sorted by criteria', () => {
   const standings = {};
   for (const groupId of ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']) {
     standings[groupId] = [
@@ -86,8 +86,11 @@ test('getBestThirdPlacedTeams returns 8 teams', () => {
   }
 
   const thirds = getBestThirdPlacedTeams(standings);
-  assert.equal(thirds.length, 8);
-  assert.ok(thirds.every(team => team.points === 4));
+  // Returns all 12 third-placed teams (top-8 cut is done in the UI / bracket code)
+  assert.equal(thirds.length, 12);
+  // Groups A-H have 4 pts, I-L have 2 pts → the 8 with 4 pts should be first
+  assert.ok(thirds.slice(0, 8).every(team => team.points === 4));
+  assert.ok(thirds.slice(8).every(team => team.points === 2));
 });
 
 test('calculateRoundOf32 and calculateNextRound keep bracket progression', () => {

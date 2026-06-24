@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 type InitialValue<T> = T | (() => T);
 
@@ -34,7 +34,11 @@ export function useLocalStorage<T>(key: string, initialValue: InitialValue<T>) {
     }
   });
 
-  const setValue = (value: T | ((val: T) => T)) => {
+  // `setValue` is memoized with useCallback so its identity stays stable across
+  // renders. This matters because App uses it in effect dependency arrays
+  // (e.g. the realtime-sync effect); an unstable identity there would cause an
+  // infinite re-subscription / re-render loop.
+  const setValue = useCallback((value: T | ((val: T) => T)) => {
     setStoredValue(previousValue => {
       try {
         const valueToStore = value instanceof Function ? value(previousValue) : value;
@@ -49,7 +53,7 @@ export function useLocalStorage<T>(key: string, initialValue: InitialValue<T>) {
         return previousValue;
       }
     });
-  };
+  }, [key]);
 
   return [storedValue, setValue] as const;
 }

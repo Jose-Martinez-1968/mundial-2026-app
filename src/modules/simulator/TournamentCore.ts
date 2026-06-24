@@ -23,6 +23,7 @@ export const compareStandings = (a: Standing, b: Standing): number => {
   if (b.points !== a.points) return b.points - a.points;
   if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
   if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+  if (b.won !== a.won) return b.won - a.won;
   if (b.fairPlay !== a.fairPlay) return b.fairPlay - a.fairPlay;
   return (a.ranking || 999) - (b.ranking || 999);
 };
@@ -227,26 +228,23 @@ export const calculateStandingsForGroups = (
 };
 
 export const getBestThirdPlacedTeams = (standings: Record<string, Standing[]>): Standing[] => {
-  // Check if we have 12 groups and all of them are completed (each team played 3 matches)
-  const groupIds = GROUPS_ORDER;
-  const allGroupsCompleted = groupIds.every(groupId => {
-    const groupTeams = standings[groupId];
-    return groupTeams && groupTeams.length === 4 && groupTeams.every(team => team.played === 3);
-  });
-
-  if (!allGroupsCompleted) {
-    return [];
-  }
-
+  // Collect the 3rd-placed team from every group that has at least one team
+  // with played > 0 (i.e. partial or complete results).  Teams with 0 matches
+  // played are still included so the table shows all 12 third-placed slots
+  // from the start, ranked by the live data.
   return GROUPS_ORDER
     .map(groupId => standings[groupId]?.[2])
     .filter((team): team is Standing => Boolean(team))
-    .sort(compareStandings)
-    .slice(0, 8);
+    .sort(compareStandings);
 };
 
 export const calculateRoundOf32FromStandings = (standings: Record<string, Standing[]>): KnockoutMatch[] => {
-  const bestThirds = getBestThirdPlacedTeams(standings);
+  // getBestThirdPlacedTeams now returns all 12 (for the live-ranking UI).
+  // For bracket generation we still need only the top 8 completed teams.
+  const allThirds = getBestThirdPlacedTeams(standings);
+  const bestThirds = allThirds
+    .filter(team => team.played === 3)
+    .slice(0, 8);
   const thirdAssignments = assignThirdPlaceTeams(bestThirds);
   const matches: KnockoutMatch[] = [];
 

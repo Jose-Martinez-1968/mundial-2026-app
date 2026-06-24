@@ -1711,21 +1711,22 @@
     "team1": {
       "name": "Norway",
       "code": "NOR",
-      "score": null
+      "score": 3
     },
     "team2": {
       "name": "Senegal",
       "code": "SEN",
-      "score": null
+      "score": 2
     },
-    "status": "SCHEDULED",
+    "status": "FINISHED",
     "utcDateString": "2026-06-23T00:00:00Z",
     "officialDate": "2026-06-23",
     "venue": "New York/New Jersey Stadium",
     "stadium": "New York/New Jersey Stadium",
     "venueTimeZone": "America/New_York",
     "kickoffStatus": "confirmed",
-    "source": "official-schedule",
+    "source": "official-api",
+    "winnerCode": "NOR",
     "bookings": []
   },
   {
@@ -1736,22 +1737,30 @@
     "team1": {
       "name": "France",
       "code": "FRA",
-      "score": null
+      "score": 3
     },
     "team2": {
       "name": "Iraq",
       "code": "IRQ",
-      "score": null
+      "score": 0
     },
-    "status": "SCHEDULED",
+    "status": "FINISHED",
     "utcDateString": "2026-06-22T21:00:00Z",
     "officialDate": "2026-06-22",
     "venue": "Philadelphia Stadium",
     "stadium": "Philadelphia Stadium",
     "venueTimeZone": "America/New_York",
     "kickoffStatus": "confirmed",
-    "source": "official-schedule",
-    "bookings": []
+    "source": "official-api",
+    "winnerCode": "FRA",
+    "bookings": [
+      {
+        "playerName": "AMIR ALAMMARI",
+        "card": "yellow",
+        "teamCode": "IRQ",
+        "teamName": "Iraq"
+      }
+    ]
   },
   {
     "matchId": "M043",
@@ -1761,22 +1770,48 @@
     "team1": {
       "name": "Argentina",
       "code": "ARG",
-      "score": null
+      "score": 2
     },
     "team2": {
       "name": "Austria",
       "code": "AUT",
-      "score": null
+      "score": 0
     },
-    "status": "SCHEDULED",
+    "status": "FINISHED",
     "utcDateString": "2026-06-22T17:00:00Z",
     "officialDate": "2026-06-22",
     "venue": "Dallas Stadium",
     "stadium": "Dallas Stadium",
     "venueTimeZone": "America/Chicago",
     "kickoffStatus": "confirmed",
-    "source": "official-schedule",
-    "bookings": []
+    "source": "official-api",
+    "winnerCode": "ARG",
+    "bookings": [
+      {
+        "playerName": "Stefan POSCH",
+        "card": "yellow",
+        "teamCode": "AUT",
+        "teamName": "Austria"
+      },
+      {
+        "playerName": "Konrad LAIMER",
+        "card": "yellow",
+        "teamCode": "AUT",
+        "teamName": "Austria"
+      },
+      {
+        "playerName": "Facundo MEDINA",
+        "card": "yellow",
+        "teamCode": "ARG",
+        "teamName": "Argentina"
+      },
+      {
+        "playerName": "Leandro PAREDES",
+        "card": "yellow",
+        "teamCode": "ARG",
+        "teamName": "Argentina"
+      }
+    ]
   },
   {
     "matchId": "M044",
@@ -1786,22 +1821,36 @@
     "team1": {
       "name": "Jordan",
       "code": "JOR",
-      "score": null
+      "score": 1
     },
     "team2": {
       "name": "Algeria",
       "code": "ALG",
-      "score": null
+      "score": 2
     },
-    "status": "SCHEDULED",
+    "status": "FINISHED",
     "utcDateString": "2026-06-23T03:00:00Z",
     "officialDate": "2026-06-23",
     "venue": "San Francisco Bay Area Stadium",
     "stadium": "San Francisco Bay Area Stadium",
     "venueTimeZone": "America/Los_Angeles",
     "kickoffStatus": "confirmed",
-    "source": "official-schedule",
-    "bookings": []
+    "source": "official-api",
+    "winnerCode": "ALG",
+    "bookings": [
+      {
+        "playerName": "Ramiz ZERROUKI",
+        "card": "yellow",
+        "teamCode": "ALG",
+        "teamName": "Algeria"
+      },
+      {
+        "playerName": "HUSAM ABUDAHAB",
+        "card": "yellow",
+        "teamCode": "JOR",
+        "teamName": "Jordan"
+      }
+    ]
   },
   {
     "matchId": "M045",
@@ -1811,22 +1860,35 @@
     "team1": {
       "name": "England",
       "code": "ENG",
-      "score": null
+      "score": 0
     },
     "team2": {
       "name": "Ghana",
       "code": "GHA",
-      "score": null
+      "score": 0
     },
-    "status": "SCHEDULED",
+    "status": "FINISHED",
     "utcDateString": "2026-06-23T20:00:00Z",
     "officialDate": "2026-06-23",
     "venue": "Boston Stadium",
     "stadium": "Boston Stadium",
     "venueTimeZone": "America/New_York",
     "kickoffStatus": "confirmed",
-    "source": "official-schedule",
-    "bookings": []
+    "source": "official-api",
+    "bookings": [
+      {
+        "playerName": "Declan RICE",
+        "card": "yellow",
+        "teamCode": "ENG",
+        "teamName": "England"
+      },
+      {
+        "playerName": "Inaki WILLIAMS",
+        "card": "yellow",
+        "teamCode": "GHA",
+        "teamName": "Ghana"
+      }
+    ]
   },
   {
     "matchId": "M046",
@@ -1861,22 +1923,36 @@
     "team1": {
       "name": "Portugal",
       "code": "POR",
-      "score": null
+      "score": 5
     },
     "team2": {
       "name": "Uzbekistan",
       "code": "UZB",
-      "score": null
+      "score": 0
     },
-    "status": "SCHEDULED",
+    "status": "FINISHED",
     "utcDateString": "2026-06-23T17:00:00Z",
     "officialDate": "2026-06-23",
     "venue": "Houston Stadium",
     "stadium": "Houston Stadium",
     "venueTimeZone": "America/Chicago",
     "kickoffStatus": "confirmed",
-    "source": "official-schedule",
-    "bookings": []
+    "source": "official-api",
+    "winnerCode": "POR",
+    "bookings": [
+      {
+        "playerName": "Odiljon XAMROBEKOV",
+        "card": "yellow",
+        "teamCode": "UZB",
+        "teamName": "Uzbekistan"
+      },
+      {
+        "playerName": "RENATO VEIGA",
+        "card": "yellow",
+        "teamCode": "POR",
+        "teamName": "Portugal"
+      }
+    ]
   },
   {
     "matchId": "M048",
@@ -2797,7 +2873,8 @@
     "fifaMatchId": "400021521",
     "stage": "Round of 32",
     "team1": {
-      "name": "1J",
+      "name": "Argentina",
+      "code": "ARG",
       "score": null
     },
     "team2": {
