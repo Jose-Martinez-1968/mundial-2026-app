@@ -31,7 +31,7 @@ export const StandingsTable: React.FC<StandingsTableProps> = ({ groupName, stand
             const isThird = index === 2;
             return (
               <tr
-                key={`${team.code}-${index}`}
+                key={team.code}
                 className={`hover:bg-slate-700/30 transition-colors ${
                   isTop2
                     ? 'border-l-4 border-l-emerald-500'
@@ -40,9 +40,11 @@ export const StandingsTable: React.FC<StandingsTableProps> = ({ groupName, stand
                     : 'border-l-4 border-l-transparent'
                 }`}
               >
-                <td className="px-4 py-2.5 font-medium flex items-center gap-2 text-slate-200">
-                  <Flag code={team.code} name={team.name} size={22} />
-                  <span className="truncate">{team.name}</span>
+                <td className="px-4 py-2.5 font-medium text-slate-200">
+                  <span className="flex items-center gap-2">
+                    <Flag code={team.code} name={team.name} size={22} />
+                    <span className="truncate">{team.name}</span>
+                  </span>
                 </td>
                 <td className="px-2 py-2.5 text-center font-bold text-white">{team.points}</td>
                 <td className="px-2 py-2.5 text-center text-slate-400">{team.played}</td>

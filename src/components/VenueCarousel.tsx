@@ -87,9 +87,13 @@ export const VenueCarousel: React.FC<VenueCarouselProps> = ({
     : currentPhoto.url;
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchWeather = async () => {
       try {
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+        const res = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`,
+          { signal: controller.signal },
+        );
         const data: unknown = await res.json();
         if (!isOpenMeteoResponse(data)) {
           throw new Error('Respuesta de clima invalida');
@@ -99,12 +103,14 @@ export const VenueCarousel: React.FC<VenueCarouselProps> = ({
           condition: data.current_weather.weathercode.toString()
         });
       } catch (e) {
+        if (controller.signal.aborted) return;
         console.error("Error fetching weather", e);
       } finally {
-        setLoadingWeather(false);
+        if (!controller.signal.aborted) setLoadingWeather(false);
       }
     };
     void fetchWeather();
+    return () => controller.abort();
   }, [lat, lon]);
 
   const next = () => setCurrentIndex((prev) => (prev + 1) % photos.length);

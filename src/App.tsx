@@ -200,9 +200,12 @@ function App() {
     matchesRef.current = matches;
   }, [matches]);
 
-  // Fetch matches from server. Runs in the background (async) and never blocks
-  // the UI. The only state it toggles directly is `loading` on the very first
-  // load; subsequent refreshes only flip `refreshing`.
+  // Fetch matches from FIFA's live API (with static-file fallback). Runs in
+  // the background and never blocks the UI. Only `loading` toggles on the
+  // very first load; subsequent refreshes flip `refreshing`.
+  //
+  // Robustness: si la carga falla por completo (ni API en vivo ni archivo
+  // local), conservamos los datos anteriores en lugar de vaciar la app.
   const fetchMatches = useCallback(async () => {
     const isFirstLoad = isFirstLoadRef.current;
     if (isFirstLoad) {
@@ -212,19 +215,32 @@ function App() {
     }
 
     try {
-      const { matches: nextMatches } = await fetchTournamentData();
+      const result = await fetchTournamentData();
 
-      setMatches(nextMatches);
-      localStorage.setItem('wc2026_cached_matches', JSON.stringify(nextMatches));
-      setCalendarError(null);
+      // Solo actualizamos si obtuvimos datos; nunca sobreescribimos con [].
+      if (result.matches.length > 0) {
+        setMatches(result.matches);
+        localStorage.setItem('wc2026_cached_matches', JSON.stringify(result.matches));
+      }
+
+      // Mostramos el aviso si la API en vivo fallo y se uso el respaldo.
+      if (result.warning) {
+        setCalendarError(result.warning);
+      } else {
+        setCalendarError(null);
+      }
+
       setLastUpdate(new Date().toLocaleTimeString());
-      if (notificationsEnabledRef.current) {
-        NotificationEngine.checkMatchesAndNotify(nextMatches);
+      if (notificationsEnabledRef.current && result.matches.length > 0) {
+        NotificationEngine.checkMatchesAndNotify(result.matches);
       }
     } catch (error) {
       console.error('No se pudo cargar el calendario:', error);
       if (matchesRef.current.length === 0) {
         setCalendarError('No se pudo establecer conexión y no hay datos locales cargados.');
+      } else {
+        // Ya tenemos datos previos: avisamos pero no vaciamos la interfaz.
+        setCalendarError('Actualización no disponible momentáneamente. Mostrando los últimos datos cargados.');
       }
     } finally {
       isFirstLoadRef.current = false;
@@ -241,6 +257,7 @@ function App() {
     return createRealtimeSync({
       onStatusChange: setIsOnline,
       onSync: fetchMatches,
+      intervalMs: 60_000, // sincronización con FIFA cada 60 s
     });
   }, [fetchMatches, setNotificationsEnabled]);
 

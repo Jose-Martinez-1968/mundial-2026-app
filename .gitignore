@@ -26,3 +26,15 @@ dist-test
 *.njsproj
 *.sln
 *.sw?
+
+# Windows reserved device names (created by accident)
+nul
+NUL
+
+# Reference material (not part of the app runtime)
+Estadios/
+
+# Temporary/scratch files
+*.tmp
+*.bak
+*.orig

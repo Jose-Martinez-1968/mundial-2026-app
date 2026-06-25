@@ -106,14 +106,16 @@ export const BestThirdsTable: React.FC<BestThirdsTableProps> = ({ standings }) =
                       </td>
 
                       {/* Team name + flag */}
-                      <td className="px-4 py-2.5 font-medium flex items-center gap-2 text-slate-200">
-                        <Flag code={team.code} name={team.name} size={22} />
-                        <span className="truncate">{team.name}</span>
-                        {qualifies && (
-                          <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-bold shrink-0">
-                            CLASIFICA
-                          </span>
-                        )}
+                      <td className="px-4 py-2.5 font-medium text-slate-200">
+                        <span className="flex items-center gap-2">
+                          <Flag code={team.code} name={team.name} size={22} />
+                          <span className="truncate">{team.name}</span>
+                          {qualifies && (
+                            <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-bold shrink-0">
+                              CLASIFICA
+                            </span>
+                          )}
+                        </span>
                       </td>
 
                       {/* Group badge */}

@@ -7,8 +7,8 @@ import { Flag } from './Flag';
 interface MatchCardProps {
   matchId: string;
   stage: string;
-  team1: { name: string; flag?: string; score?: number | null };
-  team2: { name: string; flag?: string; score?: number | null };
+  team1: { name: string; code?: string; flag?: string; score?: number | null };
+  team2: { name: string; code?: string; flag?: string; score?: number | null };
   stadium?: string;
   venue?: string;
   venueTimeZone: string;
@@ -75,7 +75,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({
 
         <div className="flex flex-col items-center gap-2 w-1/3">
           <div className="w-12 h-12 rounded-full flex items-center justify-center bg-slate-900/50 shadow-inner overflow-hidden border border-white/5">
-            <Flag name={team1.name} size={40} />
+            <Flag code={team1.code} name={team1.name} size={40} />
           </div>
           <span className="font-semibold text-center leading-tight text-sm">{team1.name}</span>
         </div>
@@ -88,7 +88,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({
 
         <div className="flex flex-col items-center gap-2 w-1/3">
           <div className="w-12 h-12 rounded-full flex items-center justify-center bg-slate-900/50 shadow-inner overflow-hidden border border-white/5">
-            <Flag name={team2.name} size={40} />
+            <Flag code={team2.code} name={team2.name} size={40} />
           </div>
           <span className="font-semibold text-center leading-tight text-sm">{team2.name}</span>
         </div>
