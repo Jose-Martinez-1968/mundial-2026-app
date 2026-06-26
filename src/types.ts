@@ -59,6 +59,18 @@ export interface KnockoutMatch {
   homeScore?: number | null;
   awayScore?: number | null;
   winner?: Standing | null;
+  sourceMatchId?: string;
+  stage?: string;
+  status?: MatchStatus;
+  officialDate?: string;
+  utcDateString?: string;
+  kickoffStatus?: 'confirmed' | 'date-only';
+  stadium?: string;
+  venue?: string;
+  venueCity?: string;
+  venueTimeZone?: string;
+  homePlaceholder?: string;
+  awayPlaceholder?: string;
 }
 
 export interface BookingDTO {

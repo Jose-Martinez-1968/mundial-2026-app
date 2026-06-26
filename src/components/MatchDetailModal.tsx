@@ -63,7 +63,7 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({ match, teams
               {match.id}
             </h3>
             <p className="text-xs text-slate-400 text-center uppercase tracking-widest font-semibold">
-              Dieciseisavos de Final
+              {match.stage || 'Fase Eliminatoria'}
             </p>
           </div>
 

@@ -6,6 +6,7 @@ import {
   Bell,
   BellRing,
   Calendar,
+  Clock,
   Globe,
   MapPin,
   MessageCircle,
@@ -38,7 +39,7 @@ import {
   calculateRoundOf32,
   calculateStandings,
 } from './modules/simulator/BracketGenerator';
-import type { GroupMatch, KnockoutMatch, MatchDTO, Team, Venue } from './types';
+import type { GroupMatch, KnockoutMatch, MatchDTO, MatchTeamDTO, Standing, Team, Venue } from './types';
 
 type TabId = 'matches' | 'groups' | 'thirds' | 'bracket' | 'venues' | 'stats';
 
@@ -63,6 +64,14 @@ const FacebookIcon = ({ size = 17 }: { size?: number }) => (
 );
 
 const OFFICIAL_TOTAL_MATCHES = 104;
+const ARGENTINA_TIMEZONE = 'America/Argentina/Buenos_Aires';
+const KNOCKOUT_MATCH_NUMBER_RANGES: Record<string, [number, number]> = {
+  R32: [73, 88],
+  R16: [89, 96],
+  QF: [97, 100],
+  SF: [101, 102],
+  FINAL: [104, 104],
+};
 const WHATSAPP_FEEDBACK_MESSAGE = [
   'Hola Jose, vengo desde la App Copa Mundial 2026.',
   'Quiero dejarte mi feedback sobre la app.',
@@ -120,6 +129,40 @@ const normalizeName = (value: string): string => {
 
 const sameName = (a: string | undefined, b: string | undefined): boolean => {
   return Boolean(a && b && normalizeName(a) === normalizeName(b));
+};
+
+const getMatchNumber = (matchId: string): number | null => {
+  const match = matchId.match(/\d+/);
+  return match ? Number(match[0]) : null;
+};
+
+const formatDateLabel = (officialDate?: string): string => {
+  if (!officialDate) return 'Fecha pendiente';
+  return new Date(`${officialDate}T12:00:00`).toLocaleDateString('es-AR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
+const formatTimeLabel = (utcDateString: string | undefined, timeZone: string | undefined): string => {
+  if (!utcDateString || !timeZone) return 'Pendiente';
+  return new Intl.DateTimeFormat('es-AR', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    hourCycle: 'h23',
+  }).format(new Date(utcDateString));
+};
+
+const getStatusLabel = (status?: MatchDTO['status']): string => {
+  if (status === 'LIVE') return 'En vivo';
+  if (status === 'FINISHED') return 'Finalizado';
+  if (status === 'POSTPONED') return 'Postergado';
+  if (status === 'CANCELLED') return 'Cancelado';
+  return 'Pendiente';
 };
 
 const splitPlayerName = (playerName: string): { firstName: string; lastName: string } => {
@@ -380,48 +423,114 @@ function App() {
   // Derived: Standings
   const standings = useMemo(() => calculateStandings(groupMatches, enrichedTeams), [groupMatches, enrichedTeams]);
 
-  // Helper function to resolve knockout scores directly from matches fetched
-  const withRealScores = useCallback((bracket: KnockoutMatch[]): KnockoutMatch[] => {
-    return bracket.map(match => {
-      const realMatch = matches.find(m => m.matchId === match.id);
-      if (realMatch) {
-        let winner = null;
-        if (realMatch.team1.score !== null && realMatch.team2.score !== null) {
-          if (realMatch.team1.score > realMatch.team2.score) {
-            winner = match.home;
-          } else if (realMatch.team2.score > realMatch.team1.score) {
-            winner = match.away;
-          } else {
-            winner =
-              realMatch.winnerCode === match.home?.code
-                ? match.home
-                : realMatch.winnerCode === match.away?.code
-                ? match.away
-                : null;
-          }
-        }
+  const venueCityByStadium = useMemo(() => {
+    return new Map(
+      (fifaData.venues as Venue[]).map(venue => [
+        venue.name,
+        `${venue.city}, ${venue.country}`,
+      ]),
+    );
+  }, []);
+
+  const createOfficialStanding = useCallback((team: MatchTeamDTO): Standing | null => {
+    if (!team.code || team.name === 'TBD') return null;
+    const knownTeam = enrichedTeams.find(candidate => candidate.code === team.code || sameName(candidate.name, team.name));
+    return {
+      ...(knownTeam || {
+        name: team.name,
+        code: team.code,
+        flag: '',
+        continent: '',
+        seed: false,
+      }),
+      name: knownTeam?.name || team.name,
+      code: knownTeam?.code || team.code,
+      teamId: knownTeam?.code || team.code,
+      teamName: knownTeam?.name || team.name,
+      groupId: '',
+      points: 0,
+      played: 0,
+      wins: 0,
+      draws: 0,
+      losses: 0,
+      won: 0,
+      drawn: 0,
+      lost: 0,
+      goalsFor: 0,
+      goalsAgainst: 0,
+      goalDifference: 0,
+      fairPlay: 0,
+    };
+  }, [enrichedTeams]);
+
+  // Enrichment: FIFA is the source of truth for knockout fixtures, scores,
+  // venues, kickoff times and winners. Simulated standings only fill pending
+  // slots while the official API still exposes placeholders.
+  const withOfficialKnockoutData = useCallback((bracket: KnockoutMatch[], roundPrefix: string): KnockoutMatch[] => {
+    const range = KNOCKOUT_MATCH_NUMBER_RANGES[roundPrefix];
+    if (!range) return bracket;
+
+    const officialMatches = matches
+      .filter(match => {
+        const number = getMatchNumber(match.matchId);
+        return number !== null && number >= range[0] && number <= range[1];
+      })
+      .sort((a, b) => (getMatchNumber(a.matchId) || 0) - (getMatchNumber(b.matchId) || 0));
+
+    return bracket.map((match, index) => {
+      const officialMatch = officialMatches[index];
+      if (!officialMatch) {
         return {
           ...match,
-          homeScore: realMatch.team1.score,
-          awayScore: realMatch.team2.score,
-          winner,
+          homeScore: null,
+          awayScore: null,
+          winner: null,
         };
       }
+
+      const officialHome = createOfficialStanding(officialMatch.team1);
+      const officialAway = createOfficialStanding(officialMatch.team2);
+      const home = officialHome || match.home;
+      const away = officialAway || match.away;
+      let winner: Standing | null = null;
+
+      if (officialMatch.winnerCode) {
+        if (officialMatch.winnerCode === home?.code) winner = home;
+        if (officialMatch.winnerCode === away?.code) winner = away;
+      } else if (officialMatch.team1.score !== null && officialMatch.team2.score !== null) {
+        if (officialMatch.team1.score > officialMatch.team2.score) winner = home;
+        if (officialMatch.team2.score > officialMatch.team1.score) winner = away;
+      }
+
       return {
         ...match,
-        homeScore: null,
-        awayScore: null,
-        winner: null,
+        home,
+        away,
+        homeScore: officialMatch.team1.score,
+        awayScore: officialMatch.team2.score,
+        winner,
+        sourceMatchId: officialMatch.matchId,
+        stage: officialMatch.stage,
+        status: officialMatch.status,
+        officialDate: officialMatch.officialDate,
+        utcDateString: officialMatch.utcDateString,
+        kickoffStatus: officialMatch.kickoffStatus,
+        stadium: officialMatch.stadium,
+        venue: officialMatch.venue,
+        venueCity: venueCityByStadium.get(officialMatch.venue) || venueCityByStadium.get(officialMatch.stadium || '') || 'Sede pendiente',
+        venueTimeZone: officialMatch.venueTimeZone,
+        homePlaceholder: officialMatch.team1.name,
+        awayPlaceholder: officialMatch.team2.name,
       };
     });
-  }, [matches]);
+  }, [createOfficialStanding, matches, venueCityByStadium]);
 
   // Brackets calculations
-  const r32Bracket = useMemo(() => withRealScores(calculateRoundOf32(standings)), [standings, withRealScores]);
-  const r16Bracket = useMemo(() => withRealScores(calculateNextRound(r32Bracket, 'R16')), [r32Bracket, withRealScores]);
-  const qfBracket = useMemo(() => withRealScores(calculateNextRound(r16Bracket, 'QF')), [r16Bracket, withRealScores]);
-  const sfBracket = useMemo(() => withRealScores(calculateNextRound(qfBracket, 'SF')), [qfBracket, withRealScores]);
-  const finalBracket = useMemo(() => withRealScores(calculateNextRound(sfBracket, 'FINAL')), [sfBracket, withRealScores]);
+  const r32Bracket = useMemo(() => withOfficialKnockoutData(calculateRoundOf32(standings), 'R32'), [standings, withOfficialKnockoutData]);
+  const r16Bracket = useMemo(() => withOfficialKnockoutData(calculateNextRound(r32Bracket, 'R16'), 'R16'), [r32Bracket, withOfficialKnockoutData]);
+  const qfBracket = useMemo(() => withOfficialKnockoutData(calculateNextRound(r16Bracket, 'QF'), 'QF'), [r16Bracket, withOfficialKnockoutData]);
+  const sfBracket = useMemo(() => withOfficialKnockoutData(calculateNextRound(qfBracket, 'SF'), 'SF'), [qfBracket, withOfficialKnockoutData]);
+  const finalBracket = useMemo(() => withOfficialKnockoutData(calculateNextRound(sfBracket, 'FINAL'), 'FINAL'), [sfBracket, withOfficialKnockoutData]);
 
   // Filtering for groups list
   const filteredGroupIds = useMemo(() => {
@@ -505,16 +614,59 @@ function App() {
         return team?.players?.some(player => player.suspensionMatchesRemaining > 0) || false;
       };
       const matchHasSuspensions = hasSuspensions(homeTeamData) || hasSuspensions(awayTeamData);
+      const homeName = match.home?.name || match.homePlaceholder || 'Pendiente de clasificacion';
+      const awayName = match.away?.name || match.awayPlaceholder || 'Pendiente de clasificacion';
+      const canOpenDetails = Boolean(match.home && match.away);
+      const localTime = match.kickoffStatus === 'date-only'
+        ? 'Pendiente'
+        : formatTimeLabel(match.utcDateString, match.venueTimeZone);
+      const argentinaTime = match.kickoffStatus === 'date-only'
+        ? 'Pendiente'
+        : formatTimeLabel(match.utcDateString, ARGENTINA_TIMEZONE);
+      const scoreIsTied = match.homeScore !== null
+        && match.homeScore !== undefined
+        && match.awayScore !== null
+        && match.awayScore !== undefined
+        && match.homeScore === match.awayScore;
+      const penaltyLabel = match.status === 'FINISHED' && scoreIsTied && match.winner
+        ? 'Definido por penales'
+        : 'Si empata: alargue 30 min y penales';
 
-      if (!match.home || !match.away) {
+      const renderTeamRow = (side: 'home' | 'away') => {
+        const team = side === 'home' ? match.home : match.away;
+        const name = side === 'home' ? homeName : awayName;
+        const score = side === 'home' ? match.homeScore : match.awayScore;
+        const isWinner = Boolean(team && match.winner?.code === team.code);
+
         return (
           <div
-            key={match.id}
-            aria-label={`Cruce ${match.id} pendiente de confirmacion oficial`}
-            className="min-h-[9.5rem] bg-slate-800/20 border border-dashed border-slate-700/50 p-4 rounded-xl"
-          />
+            className={`flex justify-between items-center bg-slate-900/60 px-3 py-2 rounded-lg border transition-all ${
+              isWinner
+                ? 'border-emerald-500/50 ring-1 ring-emerald-500/30 bg-emerald-500/5'
+                : team
+                  ? 'border-white/5'
+                  : 'border-dashed border-slate-700/70'
+            }`}
+          >
+            <div className="flex items-center gap-2.5 font-bold text-slate-200 min-w-0">
+              {team ? (
+                <Flag code={team.code} name={team.name} size={26} />
+              ) : (
+                <span className="flex h-[26px] w-[38px] shrink-0 items-center justify-center rounded-sm border border-dashed border-slate-600 bg-slate-800 text-[9px] text-slate-500">
+                  TBD
+                </span>
+              )}
+              <span className={`text-sm truncate ${team ? 'text-slate-200' : 'text-slate-500'}`}>{name}</span>
+              {isWinner && (
+                <span className="text-[10px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full">GANO</span>
+              )}
+            </div>
+            <span className="w-8 text-center font-bold text-emerald-400 text-base">
+              {score === null || score === undefined ? '-' : score}
+            </span>
+          </div>
         );
-      }
+      };
 
       return (
         <motion.div
@@ -528,10 +680,15 @@ function App() {
             <Swords size={24} />
           </div>
 
-          <div className="flex justify-between items-center mb-3">
-            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
-              {match.id}
-            </h4>
+          <div className="flex justify-between items-start gap-3 mb-3">
+            <div>
+              <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
+                {match.sourceMatchId ? `${match.id} · ${match.sourceMatchId}` : match.id}
+              </h4>
+              <span className="mt-1 inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-300">
+                {getStatusLabel(match.status)}
+              </span>
+            </div>
             <div className="flex gap-2">
               {matchHasSuspensions && (
                 <div className="text-rose-400 animate-pulse bg-rose-500/10 px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1">
@@ -542,9 +699,10 @@ function App() {
               <button
                 onClick={(event) => {
                   event.stopPropagation();
-                  setSelectedMatchForModal(match);
+                  if (canOpenDetails) setSelectedMatchForModal(match);
                 }}
-                className="text-[10px] font-bold text-blue-400 hover:text-blue-300"
+                disabled={!canOpenDetails}
+                className="text-[10px] font-bold text-blue-400 hover:text-blue-300 disabled:cursor-not-allowed disabled:text-slate-600"
               >
                 Detalles
               </button>
@@ -552,47 +710,51 @@ function App() {
           </div>
 
           <div className="flex flex-col gap-2 relative z-10">
-            <div
-              className={`flex justify-between items-center bg-slate-900/60 px-3 py-2 rounded-lg border transition-all ${
-                match.winner?.code === match.home.code
-                  ? 'border-emerald-500/50 ring-1 ring-emerald-500/30 bg-emerald-500/5'
-                  : 'border-white/5'
-              }`}
-            >
-              <div className="flex items-center gap-2.5 font-bold text-slate-200 min-w-0">
-                <Flag code={match.home.code} name={match.home.name} size={26} />
-                <span className="text-sm truncate">{match.home.name}</span>
-                {match.winner?.code === match.home.code && (
-                  <span className="text-[10px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full">GANÓ</span>
-                )}
-              </div>
-              <span className="w-8 text-center font-bold text-emerald-400 text-base">
-                {match.homeScore === null || match.homeScore === undefined ? '-' : match.homeScore}
-              </span>
-            </div>
-
+            {renderTeamRow('home')}
             <div className="flex items-center justify-center gap-2">
               <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-slate-700/50" />
               <span className="text-slate-600 text-[10px] font-black italic">VS</span>
               <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-slate-700/50" />
             </div>
+            {renderTeamRow('away')}
 
-            <div
-              className={`flex justify-between items-center bg-slate-900/60 px-3 py-2 rounded-lg border transition-all ${
-                match.winner?.code === match.away.code
-                  ? 'border-emerald-500/50 ring-1 ring-emerald-500/30 bg-emerald-500/5'
-                  : 'border-white/5'
-              }`}
-            >
-              <div className="flex items-center gap-2.5 font-bold text-slate-200 min-w-0">
-                <Flag code={match.away.code} name={match.away.name} size={26} />
-                <span className="text-sm truncate">{match.away.name}</span>
-                {match.winner?.code === match.away.code && (
-                  <span className="text-[10px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full">GANÓ</span>
-                )}
+            <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
+              <div className="rounded-lg border border-white/5 bg-slate-900/50 p-2">
+                <div className="flex items-center gap-1.5 text-slate-500">
+                  <Calendar size={12} />
+                  <span>Fecha</span>
+                </div>
+                <div className="mt-1 font-semibold text-slate-200">{formatDateLabel(match.officialDate)}</div>
               </div>
-              <span className="w-8 text-center font-bold text-emerald-400 text-base">
-                {match.awayScore === null || match.awayScore === undefined ? '-' : match.awayScore}
+              <div className="rounded-lg border border-white/5 bg-slate-900/50 p-2">
+                <div className="flex items-center gap-1.5 text-slate-500">
+                  <Clock size={12} />
+                  <span>Hora local</span>
+                </div>
+                <div className="mt-1 font-semibold text-slate-200">{localTime}</div>
+              </div>
+              <div className="rounded-lg border border-blue-500/10 bg-blue-950/20 p-2">
+                <div className="flex items-center gap-1.5 text-blue-300/70">
+                  <Clock size={12} />
+                  <span>Hora Argentina</span>
+                </div>
+                <div className="mt-1 font-semibold text-blue-200">{argentinaTime}</div>
+              </div>
+              <div className="rounded-lg border border-white/5 bg-slate-900/50 p-2">
+                <div className="flex items-center gap-1.5 text-slate-500">
+                  <MapPin size={12} />
+                  <span>Estadio</span>
+                </div>
+                <div className="mt-1 truncate font-semibold text-slate-200" title={match.venue || match.stadium || 'Estadio pendiente'}>
+                  {match.venue || match.stadium || 'Estadio pendiente'}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-white/5 bg-slate-900/40 px-3 py-2 text-[11px]">
+              <span className="truncate text-slate-400">{match.venueCity || 'Sede pendiente'}</span>
+              <span className="shrink-0 rounded-full border border-violet-400/20 bg-violet-500/10 px-2 py-0.5 font-bold text-violet-200">
+                {penaltyLabel}
               </span>
             </div>
           </div>
@@ -646,10 +808,10 @@ function App() {
               onClick={handleManualRefresh}
               disabled={refreshing}
               className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed border border-blue-400/40 rounded-lg text-sm font-bold text-white transition-all"
-              title={refreshing ? 'Actualizando…' : 'Actualizar datos de partidos y tarjetas'}
+                  title={refreshing ? 'Actualizando…' : 'Actualizar datos de partidos y tarjetas'}
             >
               <RefreshCcw size={16} className={refreshing ? 'animate-spin' : ''} />
-              <span>{refreshing ? 'Actualizando…' : 'Actualizar'}</span>
+                  <span>{refreshing ? 'Actualizando…' : 'Actualizar'}</span>
             </button>
 
             <button
